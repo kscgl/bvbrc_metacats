@@ -1,0 +1,1 @@
+if((length(sigpvals)>0) && (length(positions))){ png("barplotFile.png",width=550, height=450)

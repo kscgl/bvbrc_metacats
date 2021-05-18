@@ -1,0 +1,217 @@
+#!/usr/bin/env Rscript
+library(gregmisc)
+
+# Input file, type (aa or na), pvaluecutoff, output directory,
+args = commandArgs(trailingOnly=TRUE)
+if (length(args)<=4) {
+  stop("This requires 4 arguments.", call.=FALSE)
+}
+
+mcna=function(mat) {
+    nrow=nrow(mat)
+    ncol=ncol(mat)
+    result.pvalue=matrix(rep(NA,ncol*ncol),ncol=ncol)
+    for(ii in 1 : (ncol - 1)) {
+        for(jj in (ii+1):ncol) {
+            obs=rbind(mat[,ii],mat[,jj])
+            temp1=rep(NA,nrow)
+            temp2=rep(NA,nrow)
+            for(ss in 1:nrow) {
+                temp1[ss]=sum(mat[,ii])*sum(mat[ss,ii]+mat[ss,jj])/(sum(mat[,ii])+sum(mat[,jj]))
+                temp2[ss]=sum(mat[,jj])*sum(mat[ss,ii]+mat[ss,jj])/(sum(mat[,ii])+sum(mat[,jj]))
+            }
+            exp=rbind(temp1,temp2)
+            stat=sum((obs-exp)^2/exp)
+            result.pvalue[jj,ii]=pchisq(stat, df=(nrow-1), lower.tail = FALSE)
+            result.pvalue[ii,jj]=result.pvalue[jj,ii]
+        }
+    }
+    diag(result.pvalue) = 1
+    return(result.pvalue)
+}
+
+mcaa=function(mat) {
+    nrow=nrow(mat)
+    ncol=ncol(mat)
+    result.pvalue=matrix(rep(NA,ncol*ncol),ncol=ncol)
+    for(ii in 1 : (ncol - 1)) {
+        for(jj in (ii+1):ncol) {
+            obs=rbind(mat[,ii],mat[,jj])
+            temp1=rep(NA,nrow)
+            temp2=rep(NA,nrow)
+            for(ss in 1:nrow) {
+                temp1[ss]=sum(mat[,ii])*sum(mat[ss,ii]+mat[ss,jj])/(sum(mat[,ii])+sum(mat[,jj]))
+                temp2[ss]=sum(mat[,jj])*sum(mat[ss,ii]+mat[ss,jj])/(sum(mat[,ii])+sum(mat[,jj]))
+            }
+            exp=rbind(temp1,temp2)
+            stat=sum((obs-exp)^2/exp)
+            result.pvalue[jj,ii]=pchisq(stat, df=(ncol-1)*(nrow-1), lower.tail = FALSE)
+            result.pvalue[ii,jj]=result.pvalue[jj,ii]
+        }
+    }
+    diag(result.pvalue) = 1
+    return(result.pvalue)
+}
+
+residueDiversity = function(contable) {
+    retval <- c("")
+    nresidue = nrow(contable)
+    ngroup = ncol(contable)
+    for(i in 1 : ngroup) {
+        retval = paste(retval, "group", i, "(", sep="")
+        for(j in 1 : nresidue) {
+            residue = rownames(contable)[j]
+            count = contable[rownames(contable)==residue,i]
+            if(count > 0) {
+                retval = paste(retval, count, "_", residue, ",_", sep="")
+            }
+        }
+        retval = paste(retval, ")", sep="")
+        if(i < ngroup) {
+            retval = paste(retval, "|", sep="")
+        }
+    }
+    retval = gsub(",_)", ")", retval, fixed=TRUE)
+    return (retval)
+}
+
+# resultCST <- "Chi-square Analysis Result:\n"
+# resultMC <- "MGC Multiple Comparison Result:\n"
+# sigpvals <- numeric(0)
+# positions <- numeric(0)
+# flagsparse = "N"
+# residueDiv = ""
+
+pvalcutoff <- as.numeric(args[2]) # Parameterize this.
+
+msaTable = read.table(args[0], sep="", as.is=TRUE, comment.char="") # Parameterize this.
+
+mgc_stats_na = function(msaTable, pvalcutoff) {
+    resultCST <- "Chi-square Analysis Result:\n"
+    resultMC <- "MGC Multiple Comparison Result:\n"
+    sigpvals <- numeric(0)
+    positions <- numeric(0)
+    flagsparse = "N"
+    residueDiv = ""
+    temp1=c(as.matrix(msaTable))
+    temp2=replace(temp1, which(temp1=="TRUE"),"T")
+    temp3=matrix(temp2,ncol=ncol(msaTable))
+    msaTableNew=as.data.frame(temp3)
+    n=ncol(msaTableNew)-2
+    names(msaTableNew)=c("mgcId","group",paste("Site",1:n, sep=""))
+    for(pos in 1:n) {
+        contable = table(msaTableNew[[paste("Site",pos,sep="")]],msaTableNew[["group"]])
+        if(any(rownames(contable)=='#')) {contable=contable[-(which(rownames(contable)=='#')),,drop=FALSE]}
+        if(nrow(contable)==0) {next}
+        if(nrow(contable)==1) {
+            resultCST=paste(resultCST,paste("Site", pos, sep=""), "\tNA\t1\tNA\tN\tNA\n")
+        } else {
+            if(any(contable[contable[,]>0] < 5)) {flagsparse = "Y"} else {flagsparse = "N"}
+            residueDiv = residueDiversity(contable)
+            rname=rownames(contable)
+            ACGT=c("A","C","G","T")
+            matresult=match(ACGT, rname)
+            A=rep(0,ncol(contable))
+            C=rep(0,ncol(contable))
+            G=rep(0,ncol(contable))
+            T=rep(0,ncol(contable))
+            if(is.na(matresult[1])) {contable=rbind(contable,A)}
+            if(is.na(matresult[2])) {contable=rbind(contable,C)}
+            if(is.na(matresult[3])) {contable=rbind(contable,G)}
+            if(is.na(matresult[4])) {contable=rbind(contable,T)}
+            fit=chisq.test(contable + 0.001)
+            if(fit$p.value < pvalcutoff) {
+                sigpvals <- c(sigpvals, fit$p.value)
+                positions <- c(positions, pos)
+            }
+            resultCST=paste(resultCST, paste("Site", pos, sep=""), "\t", fit$statistic, "\t", fit$p.value, "\t", fit$parameter, "\t", flagsparse, "\t", residueDiv, "\n")
+        }
+        mcMat = mcna(contable + 0.001)
+        contRowCount = nrow(mcMat)
+        for(j in 1:(contRowCount - 1)) {
+            for(k in (j + 1):contRowCount) {
+                if(j < k) {
+                    resultMC=paste(resultMC, paste("Site", pos, sep=""), "\t", mcMat[j,k], "\t", j, "\t", k, "\n")
+                }
+            }
+        }
+    }
+    list("resultCST" = resultCST, "resultMC" = resultMC, "sigpvals" = sigpvals, "positions" = positions)
+    return (results)
+}
+
+mgc_stats_aa = function(msaTable, pvalcutoff) {
+    resultCST <- "Chi-square Analysis Result:\n"
+    resultMC <- "MGC Multiple Comparison Result:\n"
+    sigpvals <- numeric(0)
+    positions <- numeric(0)
+    flagsparse = "N"
+    residueDiv = ""
+    temp1=c(as.matrix(msaTable))
+    temp2=replace(temp1, which(temp1=="TRUE"),"T")
+    temp2=replace(temp2, which(temp2=="FALSE"),"F")
+    temp3=matrix(temp2,ncol=ncol(msaTable))
+    msaTableNew=as.data.frame(temp3)
+    n=ncol(msaTableNew)-2
+    names(msaTableNew)=c("mgcId","group",paste("Site",1:n, sep=""))
+    for(pos in 1:n) {
+        contable = table(msaTableNew[[paste("Site",pos,sep="")]],msaTableNew[["group"]])
+        if(any(rownames(contable)=='#')) {contable=contable[-(which(rownames(contable)=='#')),,drop=FALSE]}
+        if(nrow(contable)==0) {next}
+        if(nrow(contable)==1) {
+            resultCST=paste(resultCST,paste("Site", pos, sep=""), "\tNA\t1\tNA\tN\tNA\n")
+        } else {
+            if(any(contable[contable[,]>0] < 5)) {flagsparse = "Y"} else {flagsparse = "N"}
+            residueDiv = residueDiversity(contable)
+            fit=chisq.test(contable + 0.001)
+            if(fit$p.value < pvalcutoff) {
+                sigpvals <- c(sigpvals, fit$p.value)
+                positions <- c(positions, pos)
+            }
+            resultCST=paste(resultCST, paste("Site", pos, sep=""), "\t", fit$statistic, "\t", fit$p.value, "\t", fit$parameter,  "\t", flagsparse, "\t", residueDiv, "\n")
+        }
+        mcMat = mcaa(contable + 0.001)
+        contRowCount = nrow(mcMat)
+        for(j in 1:(contRowCount - 1)) {
+            for(k in (j + 1):contRowCount) {
+                if(j < k) {
+                    resultMC=paste(resultMC, paste("Site", pos, sep=""), "\t", mcMat[j,k], "\t", j, "\t", k, "\n")
+                }
+            }
+        }
+    }
+    results <- list("resultCST" = resultCST, "resultMC" = resultMC, "sigpvals" = sigpvals, "positions" = positions)
+    return (results)
+}
+
+if (args[1] == "na") { # Parameterize input selection of na or aa.
+    results = mgc_sta ts_na(msaTable)
+} else {
+    results = mgc_stats_aa(msaTable)
+}
+resultCST = results$resultCST
+resultMC = results$resultMC
+sigpvals = results$sigpvals
+positions = results$positions
+
+write.table(as.data.frame(resultCST),file = paste(args[3], "chisqTable.txt", sep="")) # Parameterize output file.
+
+write.table(as.data.frame(resultMC),file = paste(args[3], "mcTable.txt", sep="")) # Parameterize output file.
+
+if ((length(sigpvals)>0) && (length(positions))) {
+    pdf(paste(args[3], "barplotFile.png", sep=""),width=550, height=450) # This can be changed to PDF so that it does not require an X11 server. Parameterize output?
+    exponent <- seq(from=0, to=-10, by=-1)
+    yaxis <- 10^exponent
+    yrange <- c(1, 1e-10)
+    par(bg="lightgray")
+    barplot2(sigpvals,ylim=yrange,yaxt="n",log="y")
+    axis(2,at=yaxis,labels=yaxis,cex.axis=0.8,las=2)
+    abline(h=1)
+    abline(h=pvalcutoff,col="red")
+    cutofflabel <- paste("cutoff:",pvalcutoff)
+    mtext(cutofflabel, at=pvalcutoff, side=4, col="red")
+    barplot2(sigpvals,main="Chi-square Test P-values Bar Plot",xlab="Positions",ylab="P-Values",names.arg=positions,col="#2B60DE",ylim=yrange,yaxt="n",log="y",font.lab=2, plot.grid=TRUE, add=TRUE)
+    dev.off()
+}
+
+rm(resultCST, resultMC)
