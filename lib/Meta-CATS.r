@@ -1,11 +1,12 @@
 #!/usr/bin/env Rscript
-library(gregmisc)
+# library(gregmisc)
 
 # Input file, type (aa or na), pvaluecutoff, output directory,
 args = commandArgs(trailingOnly=TRUE)
-if (length(args)<=4) {
+if (length(args) < 4) {
   stop("This requires 4 arguments.", call.=FALSE)
 }
+print(args)
 
 mcna=function(mat) {
     nrow=nrow(mat)
@@ -82,9 +83,9 @@ residueDiversity = function(contable) {
 # flagsparse = "N"
 # residueDiv = ""
 
-pvalcutoff <- as.numeric(args[2]) # Parameterize this.
+pvalcutoff <- as.numeric(args[3]) # Parameterize this.
 
-msaTable = read.table(args[0], sep="", as.is=TRUE, comment.char="") # Parameterize this.
+msaTable = read.table(args[1], sep="", as.is=TRUE, comment.char="") # Parameterize this.
 
 mgc_stats_na = function(msaTable, pvalcutoff) {
     resultCST <- "Chi-square Analysis Result:\n"
@@ -184,22 +185,26 @@ mgc_stats_aa = function(msaTable, pvalcutoff) {
     return (results)
 }
 
-if (args[1] == "na") { # Parameterize input selection of na or aa.
-    results = mgc_sta ts_na(msaTable)
-} else {
+# Parameterize input selection of na or aa.
+if (tolower(args[2]) == "aa") {
     results = mgc_stats_aa(msaTable)
+} else {
+    results = mgc_sta ts_na(msaTable)
 }
 resultCST = results$resultCST
 resultMC = results$resultMC
 sigpvals = results$sigpvals
 positions = results$positions
 
-write.table(as.data.frame(resultCST),file = paste(args[3], "chisqTable.txt", sep="")) # Parameterize output file.
+# Parameterize output file.
+write.table(as.data.frame(resultCST),file = paste(args[4], "chisqTable.txt", sep=""))
 
-write.table(as.data.frame(resultMC),file = paste(args[3], "mcTable.txt", sep="")) # Parameterize output file.
+# Parameterize output file.
+write.table(as.data.frame(resultMC),file = paste(args[4], "mcTable.txt", sep=""))
 
+# This can be changed to PDF so that it does not require an X11 server. Parameterize output?
 if ((length(sigpvals)>0) && (length(positions))) {
-    pdf(paste(args[3], "barplotFile.png", sep=""),width=550, height=450) # This can be changed to PDF so that it does not require an X11 server. Parameterize output?
+    pdf(paste(args[4], "barplotFile.png", sep=""),width=550, height=450)
     exponent <- seq(from=0, to=-10, by=-1)
     yaxis <- 10^exponent
     yrange <- c(1, 1e-10)
