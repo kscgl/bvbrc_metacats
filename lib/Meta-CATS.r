@@ -187,9 +187,9 @@ mgc_stats_aa = function(msaTable, pvalcutoff) {
 
 # Parameterize input selection of na or aa.
 if (tolower(args[2]) == "aa") {
-    results = mgc_stats_aa(msaTable)
+    results = mgc_stats_aa(msaTable, pvalcutoff)
 } else {
-    results = mgc_stats_na(msaTable)
+    results = mgc_stats_na(msaTable, pvalcutoff)
 }
 resultCST = results$resultCST
 resultMC = results$resultMC
