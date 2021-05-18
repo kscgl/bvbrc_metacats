@@ -83,9 +83,9 @@ residueDiversity = function(contable) {
 # flagsparse = "N"
 # residueDiv = ""
 
-pvalcutoff <- as.numeric(args[3]) # Parameterize this.
+pvalcutoff <- as.numeric(args[3])
 
-msaTable = read.table(args[1], sep="", as.is=TRUE, comment.char="") # Parameterize this.
+msaTable = read.table(args[1], sep="", as.is=TRUE, comment.char="")
 
 mgc_stats_na = function(msaTable, pvalcutoff) {
     resultCST <- "Chi-square Analysis Result:\n"
@@ -189,7 +189,7 @@ mgc_stats_aa = function(msaTable, pvalcutoff) {
 if (tolower(args[2]) == "aa") {
     results = mgc_stats_aa(msaTable)
 } else {
-    results = mgc_sta ts_na(msaTable)
+    results = mgc_stats_na(msaTable)
 }
 resultCST = results$resultCST
 resultMC = results$resultMC
