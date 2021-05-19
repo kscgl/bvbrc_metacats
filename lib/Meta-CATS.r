@@ -209,7 +209,8 @@ if ((length(sigpvals)>0) && (length(positions))) {
     yaxis <- 10^exponent
     yrange <- c(1, 1e-10)
     par(bg="lightgray")
-    barplot2(sigpvals,ylim=yrange,yaxt="n",log="y")
+    barplot(sigpvals,ylim=yrange,yaxt="n",log="y")
+    # barplot2(sigpvals,ylim=yrange,yaxt="n",log="y")
     axis(2,at=yaxis,labels=yaxis,cex.axis=0.8,las=2)
     abline(h=1)
     abline(h=pvalcutoff,col="red")
