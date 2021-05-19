@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-# library(gregmisc)
+# library(gplot)
 
 # Input file, type (aa or na), pvaluecutoff, output directory,
 args = commandArgs(trailingOnly=TRUE)
@@ -215,7 +215,8 @@ if ((length(sigpvals)>0) && (length(positions))) {
     abline(h=pvalcutoff,col="red")
     cutofflabel <- paste("cutoff:",pvalcutoff)
     mtext(cutofflabel, at=pvalcutoff, side=4, col="red")
-    barplot2(sigpvals,main="Chi-square Test P-values Bar Plot",xlab="Positions",ylab="P-Values",names.arg=positions,col="#2B60DE",ylim=yrange,yaxt="n",log="y",font.lab=2, plot.grid=TRUE, add=TRUE)
+    barplot(sigpvals,main="Chi-square Test P-values Bar Plot",xlab="Positions",ylab="P-Values",names.arg=positions,col="#2B60DE",ylim=yrange,yaxt="n",log="y",font.lab=2, plot.grid=TRUE, add=TRUE)
+    # barplot2(sigpvals,main="Chi-square Test P-values Bar Plot",xlab="Positions",ylab="P-Values",names.arg=positions,col="#2B60DE",ylim=yrange,yaxt="n",log="y",font.lab=2, plot.grid=TRUE, add=TRUE)
     dev.off()
 }
 
