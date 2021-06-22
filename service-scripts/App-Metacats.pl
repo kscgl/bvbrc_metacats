@@ -64,13 +64,21 @@ sub process_fasta
     # Count the number of files.
     #
     my $prefix = $params_to_app->{output_file};
+    # my $metaDataFile = $params_to_app->{meta_data_file};
+    # my $seqFile = $params_to_app->{seq_file};
+    my $alignment_type = "dna";
+    if ($params_to_app->{alignment_type} eq "aligned_protein_fasta") {
+        $alignment_type = "protein";
+    }
+    my $p_value = $params_to_app->{p_value};
+    my $seqFile = basename($params_to_app->{alignment_file}));
+    my $metaDataFile = basename($params_to_app->{partition_file}));
     #
     # Write files to the staging directory.
     #
     my @to_stage;
-
-    say STDERR "Alignment already present: $aligned_exists";
-    say STDERR "Using DNA?: $dna Protein files exist: $mixed";
+    push(@to_stage, $params_to_app->{alignment_file});
+    push(@to_stage, $params_to_app->{partition_file});
     my $staged = {};
     if (@to_stage)
     {
@@ -84,14 +92,12 @@ sub process_fasta
     }
 
     # Run the analysis.
-    my @cmd = ("metadata_parser", );
+    my @cmd = ("metadata_parser", "$stage_dir/$metaDataFile", "$stage_dir/$seqFile", $alignment_type, "$p_value", "$work_dir");
     run_cmd(\@cmd);
+
 
     my @output_suffixes = (
         [qr/\.txt$/, "txt"],
-        [qr/\.tsv$/, "tsv"],
-        [qr/\.png$/, "png"],
-        [qr/\.svg$/, "svg"],
         );
     opendir(D, $work_dir) or die "Cannot opendir $work_dir: $!";
     my @files = sort { $a cmp $b } grep { -f "$work_dir/$_" } readdir(D);

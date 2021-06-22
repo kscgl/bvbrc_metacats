@@ -14,7 +14,7 @@ use warnings;
 use IPC::Run qw(run);
 # use Statistics::R;
 
-my ($metaDataFile, $seqFile, $seqType, $pvalue, $outputDir) = @ARGV;
+my ($seqFile, $metaDataFile, $seqType, $pvalue, $outputDir) = @ARGV;
 
 # my $metaDataFile = 'metadata.tsv';
 # my $seqFile = 'input.afa'; #aligned sequences
