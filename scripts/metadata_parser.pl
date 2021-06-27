@@ -102,8 +102,8 @@ foreach my $outer2 (@sortedOuter){
 
 # construct separate output files for each category and sequence
 foreach my $category1 (@sortedOuter){#metadata category
-	push(@fileNames, "$category1-rMsaInput.txt");
-	open (OUTFILE, ">$category1-rMsaInput.txt") || die "$category1-rMsaInput.txt: $!\n";
+	push(@fileNames, "$outputDir/$category1-rMsaInput.txt");
+	open (OUTFILE, ">$outputDir/$category1-rMsaInput.txt") || die "$category1-rMsaInput.txt: $!\n";
 	my @seqLabels = sort keys %categories;
 	foreach my $seq1 (@seqLabels){
 		my $attribute = $categories{$seq1}{$category1}; #points to numerical assignment representing metadata attribute
@@ -148,7 +148,7 @@ foreach my $file1 (@fileNames){#metadata category
 	close (MSAFILE);
 	if($boolean1 == 1){
 		print "\t$file1\n";
-		my $ok = run("/scratch/jsp4cu/bv-brc/bvbrc_metacats/scripts/Meta-CATS.r", $file1, $seqType, $pvalue, $outputDir);
+		my $ok = run("/homes/jsporter/bvbrc_metacats/scripts/Meta-CATS.r", $file1, $seqType, $pvalue, $outputDir);
 		if (!$ok)
 		{
 			die "Running Meta-CATS.r failed.";

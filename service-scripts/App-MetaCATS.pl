@@ -90,7 +90,7 @@ sub process_metacats
     }
 
     # Run the analysis.
-    my @cmd = ("metadata_parser", "$stage_dir/$metaDataFile", "$stage_dir/$seqFile", $alignment_type, "$p_value", $work_dir);
+    my @cmd = ("metadata_parser", "$stage_dir/$seqFile", "$stage_dir/$metaDataFile", $alignment_type, "$p_value", $work_dir);
     run_cmd(\@cmd);
 
 
