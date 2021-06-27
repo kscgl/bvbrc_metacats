@@ -64,15 +64,13 @@ sub process_fasta
     # Count the number of files.
     #
     my $prefix = $params_to_app->{output_file};
-    # my $metaDataFile = $params_to_app->{meta_data_file};
-    # my $seqFile = $params_to_app->{seq_file};
     my $alignment_type = "dna";
     if ($params_to_app->{alignment_type} eq "aligned_protein_fasta") {
         $alignment_type = "protein";
     }
     my $p_value = $params_to_app->{p_value};
     my $seqFile = basename($params_to_app->{alignment_file}));
-    my $metaDataFile = basename($params_to_app->{partition_file}));
+    my $metaDataFile = basename($params_to_app->{group_file}));
     #
     # Write files to the staging directory.
     #
