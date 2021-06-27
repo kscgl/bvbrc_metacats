@@ -16,7 +16,7 @@ use Cwd;
 use Clone;
 use URI::Escape;
 
-my $script = Bio::KBase::AppService::AppScript->new(\&process_fasta);
+my $script = Bio::KBase::AppService::AppScript->new(\&process_metacats);
 my $data_api = Bio::KBase::AppService::AppConfig->data_api_url;
 
 my $rc = $script->run(\@ARGV);
@@ -24,7 +24,7 @@ my $rc = $script->run(\@ARGV);
 exit $rc;
 
 
-sub process_fasta
+sub process_metacats
 {
     my($app, $app_def, $raw_params, $params) = @_;
 
@@ -69,28 +69,28 @@ sub process_fasta
         $alignment_type = "protein";
     }
     my $p_value = $params_to_app->{p_value};
-    my $seqFile = basename($params_to_app->{alignment_file}));
-    my $metaDataFile = basename($params_to_app->{group_file}));
+    my $seqFile = basename($params_to_app->{alignment_file});
+    my $metaDataFile = basename($params_to_app->{group_file});
     #
     # Write files to the staging directory.
     #
     my @to_stage;
     push(@to_stage, $params_to_app->{alignment_file});
-    push(@to_stage, $params_to_app->{partition_file});
+    push(@to_stage, $params_to_app->{group_file});
     my $staged = {};
     if (@to_stage)
     {
-        warn Dumper(\%in_files, \@to_stage);
+        warn Dumper(\@to_stage);
         $staged = $app->stage_in(\@to_stage, $stage_dir, 1);
-        while (my($orig, $staged_file) = each %$staged)
-        {
-            my $path_ref = $in_files{$orig};
-            $$path_ref = $staged_file;
-        }
+        # while (my($orig, $staged_file) = each %$staged)
+        # {
+        #     my $path_ref = $in_files{$orig};
+        #     $$path_ref = $staged_file;
+        # }
     }
 
     # Run the analysis.
-    my @cmd = ("metadata_parser", "$stage_dir/$metaDataFile", "$stage_dir/$seqFile", $alignment_type, "$p_value", "$work_dir");
+    my @cmd = ("metadata_parser", "$stage_dir/$metaDataFile", "$stage_dir/$seqFile", $alignment_type, "$p_value", $work_dir);
     run_cmd(\@cmd);
 
 
@@ -122,8 +122,6 @@ sub process_fasta
     {
 	unlink($staged_file) or warn "Unable to unlink $staged_file: $!";
     }
-    unlink($text_input_file) or warn "Unable to unlink $text_input_file: $!";
-    unlink($ofile) or warn "Unable to unlink $ofile: $!";
     return $output;
 }
 
