@@ -2,6 +2,7 @@
 # library(gplots)
 
 # Input file, type (aa or na), pvaluecutoff, output directory,
+options(warn=-1)
 args = commandArgs(trailingOnly=TRUE)
 if (length(args) < 4) {
   stop("This requires 4 arguments.", call.=FALSE)

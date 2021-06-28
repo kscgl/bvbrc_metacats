@@ -88,9 +88,30 @@ sub process_metacats
         #     $$path_ref = $staged_file;
         # }
     }
+    # Replace leading and trailing gaps with the '#' symbol.
+    open my $fh, '<', "$stage_dir/$seqFile" or die "Cannot open $filename: $!";
+    open(OUT, '>', "$work_dir/$seqFile") or die "Cannot open $path: $!";
+    my $seq_string = "";
+    while ( my $line = <$fh> ) {
+        chomp;
+        if (substr($line, 0, 1) eq ">") {
+            if ($seq_string) {
+                $seq_string = replace_gaps($seq_string);
+                print OUT "$seq_string\n"
 
+            }
+            $seq_string = "";
+        } else {
+            $seq_string = $seq_string.$line;
+        }
+    }
+    if ($seq_string) {
+        $seq_string = replace_gaps($seq_string);
+        print OUT "$seq_string\n"
+
+    }
     # Run the analysis.
-    my @cmd = ("metadata_parser", "$stage_dir/$seqFile", "$stage_dir/$metaDataFile", $alignment_type, "$p_value", "$work_dir/");
+    my @cmd = ("metadata_parser", "$work_dir/$seqFile", "$stage_dir/$metaDataFile", $alignment_type, "$p_value", "$work_dir/");
     run_cmd(\@cmd);
 
     copy_to_tsv($work_dir, "chisqTable");
@@ -126,6 +147,17 @@ sub process_metacats
     return $output;
 }
 
+sub replace_gaps {
+    my($line) = @_;
+    $line =~ /^-+/;
+    $start_len = length($1);
+    $line =~ /-+$/;
+    $end_len = length($1);
+    substr($line, 0, $start_len) = '#' x $start_len;
+    substr($line, length($line) - $end_len, $end_len) = '#' x $end_len;
+    return $line;
+}
+
 sub copy_to_tsv {
     my($work_dir, $basename) = @_;
     my $work_dir = $_[0];
@@ -135,17 +167,18 @@ sub copy_to_tsv {
     open my $fh, '<', $filename or die "Cannot open $filename: $!";
     open(IN, '>', $path) or die "Cannot open $path: $!";
     if ($basename eq "chisqTable") {
-        print IN "Position\tChi-square_value\tP-value\tDegrees_of_freedom\tSignificant\tResidue_Diversity\n";
+        print IN "Position\tChi-square_value\tP-value\tDegrees_of_freedom\tParse\tResidue_Diversity\n";
     } else {
         print IN "Position\tMultiple_comparison_p-value\tColumn1\tColumn2\n";
     }
     my $count = 0;
     while ( my $line = <$fh> ) {
-        $count = $count + 1;
+        next if(length($line) <= 1);
         if (substr($line, 0, 1) eq "\"") {
             next;
         }
-        print IN substr $line, 4;
+        $count = $count + 1;
+        print IN substr $line, 5;
     }
     close(IN);
     close($fh);
