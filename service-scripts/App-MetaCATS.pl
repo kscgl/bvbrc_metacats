@@ -116,7 +116,6 @@ sub process_metacats
     if ($seq_string) {
         $seq_string = replace_gaps($seq_string);
         print OUT "$seq_string\n"
-
     }
     # Run the analysis.
     my @cmd = ("metadata_parser", "$work_dir/$seqFile", "$stage_dir/$metaDataFile", $alignment_type, "$p_value", "$work_dir/");
