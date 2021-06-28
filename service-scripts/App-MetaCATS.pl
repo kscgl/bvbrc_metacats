@@ -135,17 +135,17 @@ sub copy_to_tsv {
     open my $fh, '<', $filename or die "Cannot open $filename: $!";
     open(IN, '>', $path) or die "Cannot open $path: $!";
     if ($basename eq "chisqTable") {
-        print IN "Position\tChi-square_value\tP-value\tDegrees_of_freedom\tSignificatn\tGroup\n";
+        print IN "Position\tChi-square_value\tP-value\tDegrees_of_freedom\tSignificant\tResidue_Diversity\n";
     } else {
-        print IN "Position\tThing1\tThing2\tThing3\n";
+        print IN "Position\tMultiple_comparison_p-value\tColumn1\tColumn2\n";
     }
     my $count = 0;
     while ( my $line = <$fh> ) {
         $count = $count + 1;
-        if ($count <= 2) {
+        if (substr($line, 0, 1) eq "\"") {
             next;
         }
-        print IN $line;
+        print IN substr $line, 4;
     }
     close(IN);
     close($fh);
