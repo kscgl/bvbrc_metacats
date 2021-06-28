@@ -122,8 +122,8 @@ sub process_metacats
     my @cmd = ("metadata_parser", "$work_dir/$seqFile", "$stage_dir/$metaDataFile", $alignment_type, "$p_value", "$work_dir/");
     run_cmd(\@cmd);
 
-    copy_to_tsv($work_dir, "chisqTable");
-    copy_to_tsv($work_dir, "mcTable");
+    copy_to_tsv($work_dir, "chisqTable", $p_value);
+    copy_to_tsv($work_dir, "mcTable", $p_value);
     my @output_suffixes = (
         [qr/Table\.tsv$/, "tsv"],
         );
@@ -171,17 +171,22 @@ sub replace_gaps {
 }
 
 sub copy_to_tsv {
-    my($work_dir, $basename) = @_;
+    my($work_dir, $basename, $p_value) = @_;
     my $work_dir = $_[0];
     my $basename = $_[1];
     my $filename = "$work_dir/$basename.txt";
     my $path = "$work_dir/$basename.tsv";
     open my $fh, '<', $filename or die "Cannot open $filename: $!";
     open(IN, '>', $path) or die "Cannot open $path: $!";
+    my $sel = 0;
     if ($basename eq "chisqTable") {
-        print IN "Position\tChi-square_value\tP-value\tDegrees_of_freedom\tParse\tResidue_Diversity\n";
+        $sel = 2;
+        my $stuff = "\t";
+        print IN "Position\tChi-square_value\tP-value\tSignificant\tDegrees_of_freedom\tFewer_5\tResidue_Diversity\n";
     } else {
-        print IN "Position\tMultiple_comparison_p-value\tColumn1\tColumn2\n";
+        $sel = 1;
+        my $stuff = ",";
+        print IN "Position\tMultiple_comparison_p-value\tSignificant\tGroups\n";
     }
     my $count = 0;
     while ( my $line = <$fh> ) {
@@ -190,7 +195,13 @@ sub copy_to_tsv {
             next;
         }
         $count = $count + 1;
-        print IN substr $line, 5;
+        @columns = split(/\t/, substr($line, 5));
+        my $obs_p_value = $columns[$sel];
+        my $sig = "N";
+        if ($obs_p_value < $p_value) {
+            $sig = "Y";
+        }
+        print IN join("\t", @columns[0..$sel])."\t$sig\t".join($stuff, @columns[$sel..scalar(@columns)]);."\n";
     }
     close(IN);
     close($fh);
