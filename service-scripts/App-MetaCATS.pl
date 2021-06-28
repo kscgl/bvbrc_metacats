@@ -179,13 +179,14 @@ sub copy_to_tsv {
     open my $fh, '<', $filename or die "Cannot open $filename: $!";
     open(IN, '>', $path) or die "Cannot open $path: $!";
     my $sel = 0;
+    my stuff = "";
     if ($basename eq "chisqTable") {
         $sel = 2;
-        my $stuff = "\t";
+        $stuff = "\t";
         print IN "Position\tChi-square_value\tP-value\tSignificant\tDegrees_of_freedom\tFewer_5\tResidue_Diversity\n";
     } else {
         $sel = 1;
-        my $stuff = ",";
+        $stuff = ",";
         print IN "Position\tMultiple_comparison_p-value\tSignificant\tGroups\n";
     }
     my $count = 0;
@@ -194,14 +195,22 @@ sub copy_to_tsv {
         if (substr($line, 0, 1) eq "\"") {
             next;
         }
+        chomp $line;
         $count = $count + 1;
-        @columns = split(/\t/, substr($line, 5));
+        my @columns = split(/\t/, substr($line, 5));
+        for ( my $i = 0; $i < scalar(@columns); $i++ ) {
+            my $thing = @columns[$i];
+            $thing=~ s/^\s+|\s+$//g;
+            @columns[$i] = $thing;
+        }
         my $obs_p_value = $columns[$sel];
         my $sig = "N";
         if ($obs_p_value < $p_value) {
             $sig = "Y";
         }
-        print IN join("\t", @columns[0..$sel])."\t$sig\t".join($stuff, @columns[$sel..scalar(@columns)]);."\n";
+        my $final = join($stuff, @columns[$sel+1..scalar(@columns)]);
+        # $final =~ s/,$//;
+        print IN join("\t", @columns[0..$sel])."\t$sig\t".$final."\n";
     }
     close(IN);
     close($fh);
