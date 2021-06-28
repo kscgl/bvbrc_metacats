@@ -178,8 +178,8 @@ sub copy_to_tsv {
     my $path = "$work_dir/$basename.tsv";
     open my $fh, '<', $filename or die "Cannot open $filename: $!";
     open(IN, '>', $path) or die "Cannot open $path: $!";
-    my $sel = 0;
-    my stuff = "";
+    my $sel = 0; # Location of p-value.
+    my $stuff = ""; # Delimiter for final columns.
     if ($basename eq "chisqTable") {
         $sel = 2;
         $stuff = "\t";
@@ -198,18 +198,24 @@ sub copy_to_tsv {
         chomp $line;
         $count = $count + 1;
         my @columns = split(/\t/, substr($line, 5));
+        # Remove whitespace and some formatting from columns.
         for ( my $i = 0; $i < scalar(@columns); $i++ ) {
             my $thing = @columns[$i];
             $thing=~ s/^\s+|\s+$//g;
+            if ($i == scalar(@columns) - 1) {
+                $thing =~ s/,_/,/g;
+            }
             @columns[$i] = $thing;
         }
+        # Add a column if the position is statistically significant or not.
         my $obs_p_value = $columns[$sel];
         my $sig = "N";
         if ($obs_p_value < $p_value) {
             $sig = "Y";
         }
+        # Join the columns together and print the results in a TSV file.
         my $final = join($stuff, @columns[$sel+1..scalar(@columns)]);
-        # $final =~ s/,$//;
+        $final =~ s/[,|\t]$//;
         print IN join("\t", @columns[0..$sel])."\t$sig\t".$final."\n";
     }
     close(IN);
