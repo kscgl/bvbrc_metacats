@@ -89,12 +89,17 @@ sub process_metacats
         # }
     }
     # Replace leading and trailing gaps with the '#' symbol.
-    open my $fh, '<', "$stage_dir/$seqFile" or die "Cannot open $filename: $!";
-    open(OUT, '>', "$work_dir/$seqFile") or die "Cannot open $path: $!";
+    open my $fh, '<', "$stage_dir/$seqFile" or die "Cannot open $stage_dir/$seqFile: $!";
+    open(OUT, '>', "$work_dir/$seqFile") or die "Cannot open $work_dir/$seqFile: $!";
     my $seq_string = "";
+    my $header = "";
     while ( my $line = <$fh> ) {
-        chomp;
+        chomp $line;
         if (substr($line, 0, 1) eq ">") {
+            if ($header) {
+                print OUT "$header\n";
+            }
+            $header = $line;
             if ($seq_string) {
                 $seq_string = replace_gaps($seq_string);
                 print OUT "$seq_string\n"
@@ -104,6 +109,9 @@ sub process_metacats
         } else {
             $seq_string = $seq_string.$line;
         }
+    }
+    if ($header) {
+        print OUT "$header\n";
     }
     if ($seq_string) {
         $seq_string = replace_gaps($seq_string);
@@ -149,10 +157,14 @@ sub process_metacats
 
 sub replace_gaps {
     my($line) = @_;
-    $line =~ /^-+/;
-    $start_len = length($1);
-    $line =~ /-+$/;
-    $end_len = length($1);
+    my $start_len = 0;
+    my $end_len = 0;
+    if ($line =~ /^(-+)/) {
+        $start_len = length($1);
+    }
+    if ($line =~ /(-+)$/) {
+       $end_len = length($1);
+    }
     substr($line, 0, $start_len) = '#' x $start_len;
     substr($line, length($line) - $end_len, $end_len) = '#' x $end_len;
     return $line;
