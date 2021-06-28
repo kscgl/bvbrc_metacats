@@ -64,9 +64,9 @@ sub process_metacats
     # Count the number of files.
     #
     my $prefix = $params_to_app->{output_file};
-    my $alignment_type = "dna";
+    my $alignment_type = "na";
     if ($params_to_app->{alignment_type} eq "aligned_protein_fasta") {
-        $alignment_type = "protein";
+        $alignment_type = "aa";
     }
     my $p_value = $params_to_app->{p_value};
     my $seqFile = basename($params_to_app->{alignment_file});
@@ -90,12 +90,13 @@ sub process_metacats
     }
 
     # Run the analysis.
-    my @cmd = ("metadata_parser", "$stage_dir/$seqFile", "$stage_dir/$metaDataFile", $alignment_type, "$p_value", $work_dir);
+    my @cmd = ("metadata_parser", "$stage_dir/$seqFile", "$stage_dir/$metaDataFile", $alignment_type, "$p_value", "$work_dir/");
     run_cmd(\@cmd);
 
-
+    copy_to_tsv($work_dir, "chisqTable");
+    copy_to_tsv($work_dir, "mcTable");
     my @output_suffixes = (
-        [qr/\.txt$/, "txt"],
+        [qr/Table\.tsv$/, "tsv"],
         );
     opendir(D, $work_dir) or die "Cannot opendir $work_dir: $!";
     my @files = sort { $a cmp $b } grep { -f "$work_dir/$_" } readdir(D);
@@ -123,6 +124,32 @@ sub process_metacats
 	unlink($staged_file) or warn "Unable to unlink $staged_file: $!";
     }
     return $output;
+}
+
+sub copy_to_tsv {
+    my($work_dir, $basename) = @_;
+    my $work_dir = $_[0];
+    my $basename = $_[1];
+    my $filename = "$work_dir/$basename.txt";
+    my $path = "$work_dir/$basename.tsv";
+    open my $fh, '<', $filename or die "Cannot open $filename: $!";
+    open(IN, '>', $path) or die "Cannot open $path: $!";
+    if ($basename eq "chisqTable") {
+        print IN "Position\tChi-square_value\tP-value\tDegrees_of_freedom\tSignificatn\tGroup\n";
+    } else {
+        print IN "Position\tThing1\tThing2\tThing3\n";
+    }
+    my $count = 0;
+    while ( my $line = <$fh> ) {
+        $count = $count + 1;
+        if ($count <= 2) {
+            next;
+        }
+        print IN $line;
+    }
+    close(IN);
+    close($fh);
+    return $count;
 }
 
 sub run_cmd() {
