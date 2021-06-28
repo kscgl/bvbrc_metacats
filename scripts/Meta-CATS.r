@@ -157,14 +157,14 @@ mgc_stats_na = function(msaTable, pvalcutoff) {
                 sigpvals <- c(sigpvals, fit$p.value)
                 positions <- c(positions, pos)
             }
-            resultCST=paste(resultCST, pos, "\t", fit$statistic, "\t", fit$p.value, "\t", fit$parameter, "\t", flagsparse, "\t", residueDiv, "\n")
+            resultCST=paste(resultCST, paste("Site", pos, sep=""), "\t", fit$statistic, "\t", fit$p.value, "\t", fit$parameter, "\t", flagsparse, "\t", residueDiv, "\n")
         }
         mcMat = mcFunc(contable + 0.001, "na")
         contRowCount = nrow(mcMat)
         for(j in 1:(contRowCount - 1)) {
             for(k in (j + 1):contRowCount) {
                 if(j < k) {
-                    resultMC=paste(resultMC, pos, "\t", mcMat[j,k], "\t", j, "\t", k, "\n")
+                    resultMC=paste(resultMC, paste("Site", pos, sep=""), "\t", mcMat[j,k], "\t", j, "\t", k, "\n")
                 }
             }
         }
@@ -201,14 +201,14 @@ mgc_stats_aa = function(msaTable, pvalcutoff) {
                 sigpvals <- c(sigpvals, fit$p.value)
                 positions <- c(positions, pos)
             }
-            resultCST=paste(resultCST, pos, "\t", fit$statistic, "\t", fit$p.value, "\t", fit$parameter,  "\t", flagsparse, "\t", residueDiv, "\n")
+            resultCST=paste(resultCST, paste("Site", pos, sep=""), "\t", fit$statistic, "\t", fit$p.value, "\t", fit$parameter,  "\t", flagsparse, "\t", residueDiv, "\n")
         }
         mcMat = mcFunc(contable + 0.001, "aa")
         contRowCount = nrow(mcMat)
         for(j in 1:(contRowCount - 1)) {
             for(k in (j + 1):contRowCount) {
                 if(j < k) {
-                    resultMC=paste(resultMC, pos, "\t", mcMat[j,k], "\t", j, "\t", k, "\n")
+                    resultMC=paste(resultMC, paste("Site", pos, sep=""), "\t", mcMat[j,k], "\t", j, "\t", k, "\n")
                 }
             }
         }
