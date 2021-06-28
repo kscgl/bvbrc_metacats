@@ -148,7 +148,7 @@ foreach my $file1 (@fileNames){#metadata category
 	close (MSAFILE);
 	if($boolean1 == 1){
 		print "\t$file1\n";
-		my $ok = run("/homes/jsporter/bvbrc_metacats/scripts/Meta-CATS.r", $file1, $seqType, $pvalue, $outputDir);
+		my $ok = run("Meta-CATS", $file1, $seqType, $pvalue, $outputDir);
 		if (!$ok)
 		{
 			die "Running Meta-CATS.r failed.";

@@ -197,13 +197,13 @@ sub copy_to_tsv {
         }
         chomp $line;
         $count = $count + 1;
-        my @columns = split(/\t/, substr($line, 5));
+        my @columns = split(/\t/, $line);
         # Remove whitespace and some formatting from columns.
         for ( my $i = 0; $i < scalar(@columns); $i++ ) {
             my $thing = @columns[$i];
             $thing=~ s/^\s+|\s+$//g;
             if ($i == scalar(@columns) - 1) {
-                $thing =~ s/,_/,/g;
+                $thing =~ s/_/\x20/g;
             }
             @columns[$i] = $thing;
         }
