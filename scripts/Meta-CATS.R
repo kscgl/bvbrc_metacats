@@ -1,10 +1,10 @@
 #!/usr/bin/env Rscript
 # library(gplots)
 
-# Input file, type (aa or na), pvaluecutoff, output directory,
+# Input file, type (aa or na), pvaluecutoff, output directory, basename for output
 options(warn=-1)
 args = commandArgs(trailingOnly=TRUE)
-if (length(args) < 4) {
+if (length(args) < 5) {
   stop("This requires 4 arguments.", call.=FALSE)
 }
 print(args)
@@ -229,10 +229,10 @@ sigpvals = results$sigpvals
 positions = results$positions
 
 # Parameterize output file.
-write.table(as.data.frame(resultCST),file = paste(args[4], "chisqTable.txt", sep=""))
+write.table(as.data.frame(resultCST),file = paste(args[4], args[5], "-chisqTable.txt", sep=""))
 
 # Parameterize output file.
-write.table(as.data.frame(resultMC),file = paste(args[4], "mcTable.txt", sep=""))
+write.table(as.data.frame(resultMC),file = paste(args[4], args[5], "-mcTable.txt", sep=""))
 
 # This can be changed to PDF so that it does not require an X11 server. Parameterize output?
 # if ((length(sigpvals)>0) && (length(positions))) {
