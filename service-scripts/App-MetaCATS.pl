@@ -121,8 +121,6 @@ sub process_metacats
     my @cmd = ("metadata_parser", "$work_dir/$seqFile", "$stage_dir/$metaDataFile", $alignment_type, "$p_value", "$work_dir/");
     run_cmd(\@cmd);
 
-    copy_to_tsv($work_dir, "chisqTable", $p_value);
-    copy_to_tsv($work_dir, "mcTable", $p_value);
     my @output_suffixes = (
         [qr/Table\.tsv$/, "tsv"],
         );
