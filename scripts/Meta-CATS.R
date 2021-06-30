@@ -169,7 +169,7 @@ mgc_stats_na = function(msaTable, pvalcutoff) {
             }
         }
     }
-    list("resultCST" = resultCST, "resultMC" = resultMC, "sigpvals" = sigpvals, "positions" = positions)
+    results <- list("resultCST" = resultCST, "resultMC" = resultMC, "sigpvals" = sigpvals, "positions" = positions)
     return (results)
 }
 

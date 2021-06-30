@@ -20,6 +20,7 @@ my ($seqFile, $metaDataFile, $seqType, $pvalue, $outputDir) = @ARGV;
 # my $metaDataFile = 'metadata.tsv';
 # my $seqFile = 'input.afa'; #aligned sequences
 
+print STDERR "MetaCATS metadata parser. Sequence type: $seqType";
 
 my %categories;
 my $lineNum = 0;
@@ -56,7 +57,6 @@ print "Loading Sequence Data...\n";
 
 while (my $line1 = <SEQS>) {		#read all lines of the file
 	chomp $line1;
-	$line1
 	if ($line1 =~m/^>(\S+)/){
 		$tempName = $1;
 		#print "$tempName\n";
