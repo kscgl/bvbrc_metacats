@@ -40,8 +40,8 @@
             "desc": "The file format type.",
             "type": "enum",
             "enum": [
-                "feature_dna_fasta",
-                "feature_protein_fasta"
+                "aligned_dna_fasta",
+                "aligned_protein_fasta"
             ]
         },
         {
