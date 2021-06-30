@@ -1,0 +1,8 @@
+{
+    "alignment_file": "/olson@patricbrc.org/PATRIC-QA/applications/App-MetaCATS/CH2-52NA-all.fasta.afa",
+    "group_file": "/olson@patricbrc.org/PATRIC-QA/applications/App-MetaCATS/metadata.1.tsv",
+    "p_value": 0.05,
+    "output_path": "/olson@patricbrc.org/PATRIC-QA/applications/App-MetaCATS",
+    "output_file": "metacats_one_column_aa",
+    "alignment_type": "aligned_protein_fasta"
+}

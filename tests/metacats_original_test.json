@@ -1,8 +1,0 @@
-{
-    "alignment_file": "/jsporter@patricbrc.org/home/MetaCATS/CH2-52NA-all.fasta.afa",
-    "group_file": "/jsporter@patricbrc.org/home/MetaCATS/metadata.1.tsv",
-    "p_value": 0.05,
-    "output_path": "/jsporter@patricbrc.org/home/MetaCATS",
-    "output_file": "metacats_original_test",
-    "alignment_type": "aligned_protein_fasta"
-}

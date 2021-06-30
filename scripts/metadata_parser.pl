@@ -56,7 +56,8 @@ print "Loading Sequence Data...\n";
 
 while (my $line1 = <SEQS>) {		#read all lines of the file
 	chomp $line1;
-	if ($line1 =~m/^>(.+)/){
+	$line1
+	if ($line1 =~m/^>(\S+)/){
 		$tempName = $1;
 		#print "$tempName\n";
 	}
