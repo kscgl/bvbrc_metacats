@@ -5,7 +5,7 @@
 options(warn=-1)
 args = commandArgs(trailingOnly=TRUE)
 if (length(args) < 5) {
-  stop("This requires 4 arguments.", call.=FALSE)
+  stop("This requires 5 arguments.", call.=FALSE)
 }
 print(args)
 
@@ -227,7 +227,8 @@ resultCST = results$resultCST
 resultMC = results$resultMC
 sigpvals = results$sigpvals
 positions = results$positions
-
+print("Number of Positions")
+print(length(positions))
 # Parameterize output file.
 write.table(as.data.frame(resultCST),file = paste(args[4], args[5], "-chisqTable.txt", sep=""))
 

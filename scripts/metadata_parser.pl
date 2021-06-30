@@ -11,6 +11,7 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
+use File::Basename;
 use IPC::Run qw(run);
 # use Statistics::R;
 
@@ -102,8 +103,8 @@ foreach my $outer2 (@sortedOuter){
 
 # construct separate output files for each category and sequence
 foreach my $category1 (@sortedOuter){#metadata category
-	push(@fileNames, "$outputDir/$category1-rMsaInput.txt");
-	open (OUTFILE, ">$outputDir/$category1-rMsaInput.txt") || die "$category1-rMsaInput.txt: $!\n";
+	push(@fileNames, "$outputDir/$category1.txt");
+	open (OUTFILE, ">$outputDir/$category1.txt") || die "$category1.txt: $!\n";
 	my @seqLabels = sort keys %categories;
 	foreach my $seq1 (@seqLabels){
 		my $attribute = $categories{$seq1}{$category1}; #points to numerical assignment representing metadata attribute
@@ -149,14 +150,16 @@ foreach my $file1 (@fileNames){#metadata category
 	if($boolean1 == 1){
 		print "\t$file1\n";
 		my $base = basename($file1);
-		$base = substr($base, length($base) - 4);
+		$base = substr($base, 0, length($base) - 4);
 		my $ok = run("Meta-CATS", $file1, $seqType, $pvalue, $outputDir, $base);
 		if (!$ok)
 		{
 			die "Running Meta-CATS.R failed.";
 		}
-		copy_to_tsv($outputDir, "$base-chisqTable", $p_value);
-    	copy_to_tsv($outputDir, "$base-mcTable", $p_value);
+		copy_to_tsv($outputDir, "$base-chisqTable", $pvalue);
+    	copy_to_tsv($outputDir, "$base-mcTable", $pvalue);
+		unlink("$outputDir$base-chisqTable.txt") or warn "Unable to unlink $!";
+		unlink("$outputDir$base-mcTable.txt") or warn "Unable to unlink $!";
 		# $R->set('inFilename', $file1);
 		# my $Rrun1 = $R->run_from_file("chisq_ViPR-perl_BEP.R");
 		# my $returnedFilename = $R->get('outfilename1');
@@ -168,21 +171,20 @@ foreach my $file1 (@fileNames){#metadata category
 }
 
 sub copy_to_tsv {
-    my($work_dir, $basename, $p_value) = @_;
-    my $filename = "$work_dir/$basename.txt";
-    my $path = "$work_dir/$basename.tsv";
+    my($work_dir, $basename, $pvalue) = @_;
+    my $filename = "$work_dir$basename.txt";
+    my $path = "$work_dir$basename.tsv";
     open my $fh, '<', $filename or die "Cannot open $filename: $!";
     open(IN, '>', $path) or die "Cannot open $path: $!";
     my $sel = 0; # Location of p-value.
-    my $stuff = ""; # Delimiter for final columns.
-    if ($basename eq "chisqTable") {
-        $sel = 2;
-        $stuff = "\t";
-        print IN "Position\tChi-square_value\tP-value\tSignificant\tDegrees_of_freedom\tFewer_5\tResidue_Diversity\n";
-    } else {
+    my $stuff = "\t"; # Delimiter for final columns.
+    if (substr($basename, length($basename) - 7) eq "mcTable") {
         $sel = 1;
         $stuff = ",";
         print IN "Position\tMultiple_comparison_p-value\tSignificant\tGroups\n";
+    } else {
+        $sel = 2;
+        print IN "Position\tChi-square_value\tP-value\tSignificant\tDegrees_of_freedom\tFewer_5\tResidue_Diversity\n";
     }
     my $count = 0;
     while ( my $line = <$fh> ) {
@@ -195,7 +197,7 @@ sub copy_to_tsv {
         my @columns = split(/\t/, substr($line, 5));
         # Remove whitespace and some formatting from columns.
         for ( my $i = 0; $i < scalar(@columns); $i++ ) {
-            my $thing = @columns[$i];
+            my $thing = $columns[$i];
             $thing=~ s/^\s+|\s+$//g;
             if ($i == scalar(@columns) - 1) {
                 $thing =~ s/_/\x20/g;
@@ -205,11 +207,11 @@ sub copy_to_tsv {
         # Add a column if the position is statistically significant or not.
         my $obs_p_value = $columns[$sel];
         my $sig = "N";
-        if ($obs_p_value < $p_value) {
+        if ($obs_p_value ne "NA" and $obs_p_value < $pvalue) {
             $sig = "Y";
         }
         # Join the columns together and print the results in a TSV file.
-        my $final = join($stuff, @columns[$sel+1..scalar(@columns)]);
+        my $final = join($stuff, map { defined ? $_ : '' } @columns[$sel+1..scalar(@columns)]);
         $final =~ s/[,|\t]$//;
         print IN join("\t", @columns[0..$sel])."\t$sig\t".$final."\n";
     }
