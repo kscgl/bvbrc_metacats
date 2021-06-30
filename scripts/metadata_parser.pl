@@ -212,7 +212,7 @@ sub copy_to_tsv {
             $sig = "Y";
         }
         # Join the columns together and print the results in a TSV file.
-        my $final = join($stuff, map { defined ? $_ : '' } @columns[$sel+1..scalar(@columns)]);
+        my $final = join($stuff, map { defined($_) ? $_ : '' } @columns[$sel+1..scalar(@columns)]);
         $final =~ s/[,|\t]$//;
         print IN join("\t", @columns[0..$sel])."\t$sig\t".$final."\n";
     }
