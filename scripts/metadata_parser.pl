@@ -20,7 +20,7 @@ my ($seqFile, $metaDataFile, $seqType, $pvalue, $outputDir) = @ARGV;
 # my $metaDataFile = 'metadata.tsv';
 # my $seqFile = 'input.afa'; #aligned sequences
 
-print STDOUT "MetaCATS metadata parser. Sequence type: $seqType";
+print STDOUT "MetaCATS metadata parser. Sequence type: $seqType.\n";
 
 my %categories;
 my $lineNum = 0;
