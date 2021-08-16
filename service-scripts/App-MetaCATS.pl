@@ -60,37 +60,74 @@ sub process_metacats
     #
     my %in_files;
     my $params_to_app = Clone::clone($params);
-    #
-    # Count the number of files.
-    #
+    # Get values common to all inputs.
     my $prefix = $params_to_app->{output_file};
-    my $alignment_type = "na";
-    if ($params_to_app->{alignment_type} eq "aligned_protein_fasta") {
-        $alignment_type = "aa";
-    }
     my $p_value = $params_to_app->{p_value};
-    my $seqFile = basename($params_to_app->{alignment_file});
-    my $metaDataFile = basename($params_to_app->{group_file});
-    #
-    # Write files to the staging directory.
-    #
-    my @to_stage;
-    push(@to_stage, $params_to_app->{alignment_file});
-    push(@to_stage, $params_to_app->{group_file});
-    my $staged = {};
-    if (@to_stage)
-    {
-        warn Dumper(\@to_stage);
-        $staged = $app->stage_in(\@to_stage, $stage_dir, 1);
-        # while (my($orig, $staged_file) = each %$staged)
-        # {
-        #     my $path_ref = $in_files{$orig};
-        #     $$path_ref = $staged_file;
-        # }
+    my $alphabet = $params_to_app->{alphabet};;
+    my $input_type = $params_to_app->{input_type};
+    # Get values based on input type.
+    if ($input_type eq "files") {
+        # Get sequence file and metadata file in the staging directory.
+        my $seqFile = basename($params_to_app->{alignment_file});
+        $seqFile = "$stage_dir/$seqFile";
+        my $metaDataFile = basename($params_to_app->{group_file});
+        $metaDataFile = "$stage_dir/$metaDataFile";
+        my $staged = {};
+        my @to_stage;
+        push(@to_stage, $params_to_app->{alignment_file});
+        push(@to_stage, $params_to_app->{group_file});
+        if (@to_stage)
+        {
+            warn Dumper(\@to_stage);
+            $staged = $app->stage_in(\@to_stage, $stage_dir, 1);
+            # while (my($orig, $staged_file) = each %$staged)
+            # {
+            #     my $path_ref = $in_files{$orig};
+            #     $$path_ref = $staged_file;
+            # }
+        }
+    } else if ($input_type eq "groups") {
+        # Get the sequences and create a metadata file for the groups.
+        my $ofile = "$stage_dir/feature_groups.fasta";
+        open(F, ">$ofile") or die "Could not open $ofile";
+        my $metaDataFile = "$work_dir/metadata.tsv";
+        open(G, ">$metaDataFile") or die "Could not open $metaDataFile";
+        for my $feature_name (@{$params_to_app->{feature_groups}}) {
+            my $ids = $data_api_module->retrieve_patricids_from_feature_group($feature_name);
+            my $seq = "";
+            if ($alphabet eq "na") {
+                $seq = $data_api_module->retrieve_nucleotide_feature_sequence($ids);
+            } else {
+                $seq = $data_api_module->retrieve_protein_feature_sequence($ids);
+            }
+            for my $id (@$ids) {
+                my $out = ">$id\n" . $seq->{$id} . "\n";
+                print F $out;
+                print G "$id\t" . "$feature_name" . "\n";
+            }
+        }
+        close F;
+        close G;
+        # Align the sequences.
+        my @mafft_cmd = ("mafft", "--auto", "--preservecase", $ofile);
+        my $string_cmd = join(" ", @mafft_cmd);
+        print STDOUT "Running mafft.\n";
+        print STDOUT "$string_cmd\n";
+        my $seqFile = "$work_dir/output.afa";
+        my $ok = run(\@mafft_cmd, ">", $seqFile);
+        if (!$ok) {
+            die "Mafft command failed.\n";
+        }
+        print STDOUT "Finished mafft.\n"
+    } else if ($input_type eq "auto") {
+        die("Auto grouping is not yet implemented.");
+    } else {
+        die("Unrecognized input type.");
     }
-    # Replace leading and trailing gaps with the '#' symbol.
-    open my $fh, '<', "$stage_dir/$seqFile" or die "Cannot open $stage_dir/$seqFile: $!";
-    open(OUT, '>', "$work_dir/$seqFile") or die "Cannot open $work_dir/$seqFile: $!";
+    # Replace leading and trailing gaps with the '#' symbol in the sequence file.
+    open my $fh, '<', "$seqFile" or die "Cannot open $seqFile: $!";
+    my $adjusted_seqFile = "$work_dir/adjusted_seqs.fasta";
+    open(OUT, '>', "$adjusted_seqFile") or die "Cannot open $adjusted_seqFile: $!";
     my $seq_string = "";
     my $header = "";
     while ( my $line = <$fh> ) {
@@ -117,8 +154,9 @@ sub process_metacats
         $seq_string = replace_gaps($seq_string);
         print OUT "$seq_string\n"
     }
+    close OUT;
     # Run the analysis.
-    my @cmd = ("metadata_parser", "$work_dir/$seqFile", "$stage_dir/$metaDataFile", $alignment_type, "$p_value", "$work_dir/");
+    my @cmd = ("metadata_parser", "$adjusted_seqFile", "$metaDataFile", $alphabet, "$p_value", "$work_dir/");
     run_cmd(\@cmd);
 
     my @output_suffixes = (

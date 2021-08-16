@@ -4,5 +4,6 @@
     "p_value": 0.05,
     "output_path": "/olson@patricbrc.org/PATRIC-QA/applications/App-MetaCATS",
     "output_file": "metacats_one_column_na",
-    "alignment_type": "aligned_dna_fasta"
+    "input_type": "files",
+    "alphabet": "na"
 }

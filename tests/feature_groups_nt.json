@@ -1,0 +1,11 @@
+{
+    "p_value": 0.05,
+    "output_path": "/jsporter@patricbrc.org/home/MetaCATS",
+    "output_file": "feature_group_dna",
+    "alphabet": "na",
+    "input_type": "groups",
+    "groups": [
+        "/jsporter@patricbrc.org/home/MSA/data/AlignMe1",
+        "/jsporter@patricbrc.org/home/Feature Groups/Pestis"
+    ]
+}
