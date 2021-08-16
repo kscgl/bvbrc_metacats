@@ -63,16 +63,19 @@ sub process_metacats
     # Get values common to all inputs.
     my $prefix = $params_to_app->{output_file};
     my $p_value = $params_to_app->{p_value};
-    my $alphabet = $params_to_app->{alphabet};;
+    my $alphabet = $params_to_app->{alphabet};
     my $input_type = $params_to_app->{input_type};
+    my $seqFile = "";
+    my $metaDataFile = "";
+    my $staged = {};
+
     # Get values based on input type.
     if ($input_type eq "files") {
         # Get sequence file and metadata file in the staging directory.
-        my $seqFile = basename($params_to_app->{alignment_file});
+        $seqFile = basename($params_to_app->{alignment_file});
         $seqFile = "$stage_dir/$seqFile";
-        my $metaDataFile = basename($params_to_app->{group_file});
+        $metaDataFile = basename($params_to_app->{group_file});
         $metaDataFile = "$stage_dir/$metaDataFile";
-        my $staged = {};
         my @to_stage;
         push(@to_stage, $params_to_app->{alignment_file});
         push(@to_stage, $params_to_app->{group_file});
@@ -86,13 +89,15 @@ sub process_metacats
             #     $$path_ref = $staged_file;
             # }
         }
-    } else if ($input_type eq "groups") {
+    } elsif ($input_type eq "groups") {
         # Get the sequences and create a metadata file for the groups.
         my $ofile = "$stage_dir/feature_groups.fasta";
         open(F, ">$ofile") or die "Could not open $ofile";
-        my $metaDataFile = "$work_dir/metadata.tsv";
+        $metaDataFile = "$work_dir/metadata.tsv";
         open(G, ">$metaDataFile") or die "Could not open $metaDataFile";
-        for my $feature_name (@{$params_to_app->{feature_groups}}) {
+        print G "Seq_ID\t$prefix\n";
+        for my $feature_name (@{$params_to_app->{groups}}) {
+            print STDOUT "Getting features in $feature_name\n";
             my $ids = $data_api_module->retrieve_patricids_from_feature_group($feature_name);
             my $seq = "";
             if ($alphabet eq "na") {
@@ -113,13 +118,13 @@ sub process_metacats
         my $string_cmd = join(" ", @mafft_cmd);
         print STDOUT "Running mafft.\n";
         print STDOUT "$string_cmd\n";
-        my $seqFile = "$work_dir/output.afa";
-        my $ok = run(\@mafft_cmd, ">", $seqFile);
+        $seqFile = "$work_dir/output.afa";
+        my $ok = run(\@mafft_cmd, "1>", $seqFile, "2>", "$work_dir/$prefix.mafft.log");
         if (!$ok) {
             die "Mafft command failed.\n";
         }
-        print STDOUT "Finished mafft.\n"
-    } else if ($input_type eq "auto") {
+        print STDOUT "Finished mafft.\n";
+    } elsif ($input_type eq "auto") {
         die("Auto grouping is not yet implemented.");
     } else {
         die("Unrecognized input type.");
@@ -139,8 +144,7 @@ sub process_metacats
             $header = $line;
             if ($seq_string) {
                 $seq_string = replace_gaps($seq_string);
-                print OUT "$seq_string\n"
-
+                print OUT "$seq_string\n";
             }
             $seq_string = "";
         } else {
@@ -152,7 +156,7 @@ sub process_metacats
     }
     if ($seq_string) {
         $seq_string = replace_gaps($seq_string);
-        print OUT "$seq_string\n"
+        print OUT "$seq_string\n";
     }
     close OUT;
     # Run the analysis.
@@ -161,6 +165,7 @@ sub process_metacats
 
     my @output_suffixes = (
         [qr/Table\.tsv$/, "tsv"],
+        [qr/\.log$/, "txt"],
         );
     opendir(D, $work_dir) or die "Cannot opendir $work_dir: $!";
     my @files = sort { $a cmp $b } grep { -f "$work_dir/$_" } readdir(D);

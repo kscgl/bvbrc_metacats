@@ -1,11 +1,11 @@
 {
     "p_value": 0.05,
-    "output_path": "/jsporter@patricbrc.org/home/MetaCATS",
+    "output_path": "/olson@patricbrc.org/PATRIC-QA/applications/App-MetaCATS",
     "output_file": "feature_group_protein",
     "alphabet": "aa",
     "input_type": "groups",
     "groups": [
-        "/jsporter@patricbrc.org/home/MSA/data/AlignMe1",
-        "/jsporter@patricbrc.org/home/Feature Groups/Pestis"
+        "/olson@patricbrc.org/PATRIC-QA/applications/App-MetaCATS/Pestis",
+        "/olson@patricbrc.org/PATRIC-QA/applications/App-MetaCATS/AlignMe1"
     ]
 }
