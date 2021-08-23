@@ -98,6 +98,29 @@
                 "aligned_dna_fasta",
                 "aligned_protein_fasta"
             ]
+        },
+        {
+            "id": "auto_groups",
+            "type": "group",
+            "allow_multiple": true,
+            "required": 0,
+            "default": null,
+            "group": [
+                {
+                    "id": "id",
+                    "required": 1,
+                    "label": "The feature / patric id.",
+                    "desc": "An id that uniquely references a DNA/AA string.",
+                    "type": "string"
+                },
+                {
+                    "id": "grp",
+                    "required": 1,
+                    "label": "Group string",
+                    "desc": "A string to describe the group to associate the id into.",
+                    "type": "string"
+                }
+            ]
         }
     ]
 }

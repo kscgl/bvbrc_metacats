@@ -68,6 +68,7 @@ sub process_metacats
     my $seqFile = "";
     my $metaDataFile = "";
     my $staged = {};
+    my $ofile = "$stage_dir/downloaded_sequences.fasta";
 
     # Get values based on input type.
     if ($input_type eq "files") {
@@ -91,7 +92,6 @@ sub process_metacats
         }
     } elsif ($input_type eq "groups") {
         # Get the sequences and create a metadata file for the groups.
-        my $ofile = "$stage_dir/feature_groups.fasta";
         open(F, ">$ofile") or die "Could not open $ofile";
         $metaDataFile = "$work_dir/metadata.tsv";
         open(G, ">$metaDataFile") or die "Could not open $metaDataFile";
@@ -113,6 +113,18 @@ sub process_metacats
         }
         close F;
         close G;
+    } elsif ($input_type eq "auto") {
+        # Put the sequences in the ofile from the patric ids, and get the metadata file from the JSON object.
+        open(F, ">$ofile") or die "Could not open $ofile";
+        $metaDataFile = "$work_dir/metadata.tsv";
+        open(G, ">$metaDataFile") or die "Could not open $metaDataFile";
+        print G "Seq_ID\t$prefix\n";
+        # Need code here.
+        die("Auto grouping is not yet implemented.");
+    } else {
+        die("Unrecognized input type.");
+    }
+    if (($input_type eq "groups") or ($input_type eq "auto")) {
         # Align the sequences.
         my @mafft_cmd = ("mafft", "--auto", "--preservecase", $ofile);
         my $string_cmd = join(" ", @mafft_cmd);
@@ -124,10 +136,6 @@ sub process_metacats
             die "Mafft command failed.\n";
         }
         print STDOUT "Finished mafft.\n";
-    } elsif ($input_type eq "auto") {
-        die("Auto grouping is not yet implemented.");
-    } else {
-        die("Unrecognized input type.");
     }
     # Replace leading and trailing gaps with the '#' symbol in the sequence file.
     open my $fh, '<', "$seqFile" or die "Cannot open $seqFile: $!";
@@ -162,7 +170,6 @@ sub process_metacats
     # Run the analysis.
     my @cmd = ("metadata_parser", "$adjusted_seqFile", "$metaDataFile", $alphabet, "$p_value", "$work_dir/");
     run_cmd(\@cmd);
-
     my @output_suffixes = (
         [qr/Table\.tsv$/, "tsv"],
         [qr/\.log$/, "txt"],
