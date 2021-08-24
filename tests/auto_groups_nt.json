@@ -1,7 +1,7 @@
 {
     "p_value": 0.05,
     "output_path": "/olson@patricbrc.org/PATRIC-QA/applications/App-MetaCATS",
-    "output_file": "auto_groups_aa",
+    "output_file": "auto_groups_nt",
     "alphabet": "na",
     "input_type": "auto",
     "auto_groups": [

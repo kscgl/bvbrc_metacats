@@ -106,7 +106,7 @@ sub process_metacats
                 $seq = $data_api_module->retrieve_protein_feature_sequence($ids);
             }
             for my $id (@$ids) {
-                my $out = ">$id\n" . $seq->{$id} . "\n";
+                my $out = ">$id\n" . uc($seq->{$id}) . "\n";
                 print F $out;
                 print G "$id\t" . "$feature_name" . "\n";
             }
@@ -119,8 +119,20 @@ sub process_metacats
         $metaDataFile = "$work_dir/metadata.tsv";
         open(G, ">$metaDataFile") or die "Could not open $metaDataFile";
         print G "Seq_ID\t$prefix\n";
-        # Need code here.
-        die("Auto grouping is not yet implemented.");
+        my @ids = ();
+        for (@{$params->{auto_groups}}) {
+            push(@ids, $_->{id});
+            print G $_->{id} . "\t" . $_->{grp} . "\n";
+        }
+        my $seq = "";
+        if ($alphabet eq "na") {
+            $seq = $data_api_module->retrieve_nucleotide_feature_sequence(\@ids);
+        } else {
+            $seq = $data_api_module->retrieve_protein_feature_sequence(\@ids);
+        }
+        for my $id (@ids) {
+            print F ">$id\n" . uc($seq->{$id}) . "\n";
+        }
     } else {
         die("Unrecognized input type.");
     }
