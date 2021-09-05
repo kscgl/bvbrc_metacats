@@ -133,8 +133,8 @@ foreach my $category1 (@sortedOuter){#metadata category
 print "Running Statistics...\n";
 foreach my $file1 (@fileNames){#metadata category
 	my $category = $file_to_category{$file1};
-	my %num_hash = $rev_assignments{$category};
-	my $group_count = keys %num_hash;
+	my $num_hash = $rev_assignments{$category};
+	my $group_count = keys %$num_hash;
 	print STDOUT "Category $category $group_count\n";
 	open (MSAFILE, "<$file1") || die "$file1: $!\n";
 	my $boolean1 = 0;
@@ -166,10 +166,10 @@ foreach my $file1 (@fileNames){#metadata category
 		{
 			die "Running Meta-CATS.R failed.";
 		}
-		copy_to_tsv($outputDir, "$base-chisqTable", $pvalue, $group_count, \%num_hash);
-		use_group_string_chisq($outputDir, "$base-chisqTable", $pvalue, $group_count, \%num_hash);
-    	copy_to_tsv($outputDir, "$base-mcTable", $pvalue, $group_count, \%num_hash);
-		use_group_string_mcTable($outputDir, "$base-mcTable", $pvalue, $group_count, \%num_hash);
+		copy_to_tsv($outputDir, "$base-chisqTable", $pvalue);
+		use_group_string_chisq($outputDir, "$base-chisqTable", $group_count, $num_hash);
+    	copy_to_tsv($outputDir, "$base-mcTable", $pvalue);
+		use_group_string_mcTable($outputDir, "$base-mcTable", $group_count, $num_hash);
 		unlink("$outputDir$base-chisqTable.txt") or warn "Unable to unlink $!";
 		unlink("$outputDir$base-mcTable.txt") or warn "Unable to unlink $!";
 		# $R->set('inFilename', $file1);
@@ -201,12 +201,31 @@ sub use_group_string_mcTable {
 	open my $fh, '<', $temp_path or die "Cannot open $temp_path: $!";
     open(IN, '>', $path) or die "Cannot open $path: $!";
 	print IN "Position\tMultiple_comparison_p-value\tSignificant\tGroups\n";
+	my $sel = 2;
+	foreach my $key (sort(keys %$num_hash_ref)) {
+    	# print STDOUT $key, '=', %$num_hash_ref{$key}, "\n";
+		print STDOUT $key;
+	}
+	while ( my $line = <$fh> ) {
+        chomp $line;
+        my @columns = split(/\t/, $line);
+		my $groups_str = $columns[-1];
+		my @groups = split(',', $groups_str);
+		my $text = "";
+		for my $num (@groups) {
+			$text = $text . %$num_hash_ref{$num} . ',';
+		}
+		if (length($text) > 1) {
+			$text = substr($text, 0, -1);
+		}
+		print IN join("\t", @columns[0..$sel])."\t".$text."\n";
+	}
 	# Convert groups column numbers to group strings.
 	unlink($temp_path) or warn "Unable to unlink $!";
 }
 
 sub copy_to_tsv {
-    my($work_dir, $basename, $pvalue, $group_count, $num_hash_ref) = @_;
+    my($work_dir, $basename, $pvalue) = @_;
     my $filename = "$work_dir$basename.txt";
     my $path = "$work_dir$basename.temp.tsv";
     open my $fh, '<', $filename or die "Cannot open $filename: $!";
