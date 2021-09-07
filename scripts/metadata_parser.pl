@@ -87,6 +87,7 @@ for (my $k = 1; $k < $numCategories; $k++){
 
 #assign group numbers in new hash
 my %assignments;
+my %rev_assignments;
 my @sortedOuter = sort keys %categoryCounts;
 my $outerLength = @sortedOuter;
 my @sortedInner;
@@ -97,14 +98,18 @@ foreach my $outer2 (@sortedOuter){
 	$innerLength = @sortedInner;
 	$number = 1;
 	foreach my $inner2 (@sortedInner) {
+		# print STDOUT "Assignments: $outer2 $inner2 $number\n";
 		$assignments{$outer2}{$inner2}= $number;
+		$rev_assignments{$outer2}{$number}= $inner2;
 		$number++;
 	}
 }
 
 # construct separate output files for each category and sequence
+my %file_to_category;
 foreach my $category1 (@sortedOuter){#metadata category
 	push(@fileNames, "$outputDir/$category1.txt");
+	$file_to_category{"$outputDir/$category1.txt"} = $category1;
 	open (OUTFILE, ">$outputDir/$category1.txt") || die "$category1.txt: $!\n";
 	my @seqLabels = sort keys %categories;
 	foreach my $seq1 (@seqLabels){
@@ -127,6 +132,10 @@ foreach my $category1 (@sortedOuter){#metadata category
 # my $R = Statistics::R->new();
 print "Running Statistics...\n";
 foreach my $file1 (@fileNames){#metadata category
+	my $category = $file_to_category{$file1};
+	my $num_hash = $rev_assignments{$category};
+	my $group_count = keys %$num_hash;
+	print STDOUT "Category $category $group_count\n";
 	open (MSAFILE, "<$file1") || die "$file1: $!\n";
 	my $boolean1 = 0;
 	my $firstloop = 0;
@@ -158,7 +167,9 @@ foreach my $file1 (@fileNames){#metadata category
 			die "Running Meta-CATS.R failed.";
 		}
 		copy_to_tsv($outputDir, "$base-chisqTable", $pvalue);
+		use_group_string_chisq($outputDir, "$base-chisqTable", $group_count, $num_hash);
     	copy_to_tsv($outputDir, "$base-mcTable", $pvalue);
+		use_group_string_mcTable($outputDir, "$base-mcTable", $num_hash);
 		unlink("$outputDir$base-chisqTable.txt") or warn "Unable to unlink $!";
 		unlink("$outputDir$base-mcTable.txt") or warn "Unable to unlink $!";
 		# $R->set('inFilename', $file1);
@@ -171,10 +182,75 @@ foreach my $file1 (@fileNames){#metadata category
 	}
 }
 
+sub use_group_string_chisq {
+	my ($work_dir, $basename, $group_count, $num_hash_ref) = @_;
+	my $temp_path = "$work_dir$basename.temp.tsv";
+	my $path = "$work_dir$basename.tsv";
+	open my $fh, '<', $temp_path or die "Cannot open $temp_path: $!";
+    open(IN, '>', $path) or die "Cannot open $path: $!";
+	# Convert groups column numbers to group strings. Change the column header from residue diversity to column headers for group strings.
+	print IN "Position\tChi-square_value\tP-value\tSignificant\tDegrees_of_freedom\tFewer_5";
+	for (my $i = 1; $i <= $group_count; $i ++) {
+		print IN "\t" . %$num_hash_ref{$i};
+	}
+	print IN "\n";
+	while (my $line = <$fh>) {
+		chomp $line;
+		my @columns = split(/\t/, $line);
+		my %line_group;
+		for (my $i = 1; $i <= $group_count; $i ++) {
+			$line_group{$i} = "";
+		}
+		my $groups_str = pop(@columns);
+		if (substr($groups_str, 0, 2) eq "gr") {
+			$groups_str =~ s/\|/\t/g;
+			my @groups = split("\t", $groups_str);
+			for my $g_string (@groups) {
+				$g_string =~ /group([0-9]+)\((.*)\)/;
+				$line_group{$1} = $2;
+			}
+		}
+		for (my $i = 1; $i <= $group_count; $i ++) {
+			push(@columns, $line_group{$i});
+		}
+		print IN join("\t", @columns) . "\n";
+	}
+	unlink($temp_path) or warn "Unable to unlink $!";
+}
+
+sub use_group_string_mcTable {
+	my ($work_dir, $basename, $num_hash_ref) = @_;
+	my $temp_path = "$work_dir$basename.temp.tsv";
+	my $path = "$work_dir$basename.tsv";
+	open my $fh, '<', $temp_path or die "Cannot open $temp_path: $!";
+    open(IN, '>', $path) or die "Cannot open $path: $!";
+	print IN "Position\tMultiple_comparison_p-value\tSignificant\tGroups\n";
+	my $sel = 2;
+	# Convert group numbers to group strings.
+	while ( my $line = <$fh> ) {
+        chomp $line;
+        my @columns = split(/\t/, $line);
+		my $groups_str = $columns[-1];
+		my @groups = split(',', $groups_str);
+		my $text = "";
+		for my $num (@groups) {
+			$text = $text . %$num_hash_ref{$num} . ',';
+		}
+		while (substr($text, 0, 1) eq ",") {
+			$text = substr($text, 1);
+		}
+		if (length($text) > 1) {
+			$text = substr($text, 0, -1);
+		}
+		print IN join("\t", @columns[0..$sel])."\t".$text."\n";
+	}
+	unlink($temp_path) or warn "Unable to unlink $!";
+}
+
 sub copy_to_tsv {
     my($work_dir, $basename, $pvalue) = @_;
     my $filename = "$work_dir$basename.txt";
-    my $path = "$work_dir$basename.tsv";
+    my $path = "$work_dir$basename.temp.tsv";
     open my $fh, '<', $filename or die "Cannot open $filename: $!";
     open(IN, '>', $path) or die "Cannot open $path: $!";
     my $sel = 0; # Location of p-value.
@@ -182,10 +258,8 @@ sub copy_to_tsv {
     if (substr($basename, length($basename) - 7) eq "mcTable") {
         $sel = 1;
         $stuff = ",";
-        print IN "Position\tMultiple_comparison_p-value\tSignificant\tGroups\n";
     } else {
         $sel = 2;
-        print IN "Position\tChi-square_value\tP-value\tSignificant\tDegrees_of_freedom\tFewer_5\tResidue_Diversity\n";
     }
     my $count = 0;
     while ( my $line = <$fh> ) {
