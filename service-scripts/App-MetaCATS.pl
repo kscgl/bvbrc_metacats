@@ -60,37 +60,99 @@ sub process_metacats
     #
     my %in_files;
     my $params_to_app = Clone::clone($params);
-    #
-    # Count the number of files.
-    #
+    # Get values common to all inputs.
     my $prefix = $params_to_app->{output_file};
-    my $alignment_type = "na";
-    if ($params_to_app->{alignment_type} eq "aligned_protein_fasta") {
-        $alignment_type = "aa";
-    }
     my $p_value = $params_to_app->{p_value};
-    my $seqFile = basename($params_to_app->{alignment_file});
-    my $metaDataFile = basename($params_to_app->{group_file});
-    #
-    # Write files to the staging directory.
-    #
-    my @to_stage;
-    push(@to_stage, $params_to_app->{alignment_file});
-    push(@to_stage, $params_to_app->{group_file});
+    my $alphabet = $params_to_app->{alphabet};
+    my $input_type = $params_to_app->{input_type};
+    my $seqFile = "";
+    my $metaDataFile = "";
     my $staged = {};
-    if (@to_stage)
-    {
-        warn Dumper(\@to_stage);
-        $staged = $app->stage_in(\@to_stage, $stage_dir, 1);
-        # while (my($orig, $staged_file) = each %$staged)
-        # {
-        #     my $path_ref = $in_files{$orig};
-        #     $$path_ref = $staged_file;
-        # }
+    my $ofile = "$stage_dir/downloaded_sequences.fasta";
+
+    # Get values based on input type.
+    if ($input_type eq "files") {
+        # Get sequence file and metadata file in the staging directory.
+        $seqFile = basename($params_to_app->{alignment_file});
+        $seqFile = "$stage_dir/$seqFile";
+        $metaDataFile = basename($params_to_app->{group_file});
+        $metaDataFile = "$stage_dir/$metaDataFile";
+        my @to_stage;
+        push(@to_stage, $params_to_app->{alignment_file});
+        push(@to_stage, $params_to_app->{group_file});
+        if (@to_stage)
+        {
+            warn Dumper(\@to_stage);
+            $staged = $app->stage_in(\@to_stage, $stage_dir, 1);
+            # while (my($orig, $staged_file) = each %$staged)
+            # {
+            #     my $path_ref = $in_files{$orig};
+            #     $$path_ref = $staged_file;
+            # }
+        }
+    } elsif ($input_type eq "groups") {
+        # Get the sequences and create a metadata file for the groups.
+        open(F, ">$ofile") or die "Could not open $ofile";
+        $metaDataFile = "$work_dir/metadata.tsv";
+        open(G, ">$metaDataFile") or die "Could not open $metaDataFile";
+        print G "Seq_ID\t$prefix\n";
+        for my $feature_name (@{$params_to_app->{groups}}) {
+            print STDOUT "Getting features in $feature_name\n";
+            my $ids = $data_api_module->retrieve_patricids_from_feature_group($feature_name);
+            my $seq = "";
+            if ($alphabet eq "na") {
+                $seq = $data_api_module->retrieve_nucleotide_feature_sequence($ids);
+            } else {
+                $seq = $data_api_module->retrieve_protein_feature_sequence($ids);
+            }
+            for my $id (@$ids) {
+                my $out = ">$id\n" . uc($seq->{$id}) . "\n";
+                print F $out;
+                print G "$id\t" . "$feature_name" . "\n";
+            }
+        }
+        close F;
+        close G;
+    } elsif ($input_type eq "auto") {
+        # Put the sequences in the ofile from the patric ids, and get the metadata file from the JSON object.
+        open(F, ">$ofile") or die "Could not open $ofile";
+        $metaDataFile = "$work_dir/metadata.tsv";
+        open(G, ">$metaDataFile") or die "Could not open $metaDataFile";
+        print G "Seq_ID\t$prefix\n";
+        my @ids = ();
+        for (@{$params->{auto_groups}}) {
+            push(@ids, $_->{id});
+            print G $_->{id} . "\t" . $_->{grp} . "\n";
+        }
+        my $seq = "";
+        if ($alphabet eq "na") {
+            $seq = $data_api_module->retrieve_nucleotide_feature_sequence(\@ids);
+        } else {
+            $seq = $data_api_module->retrieve_protein_feature_sequence(\@ids);
+        }
+        for my $id (@ids) {
+            print F ">$id\n" . uc($seq->{$id}) . "\n";
+        }
+    } else {
+        die("Unrecognized input type.");
     }
-    # Replace leading and trailing gaps with the '#' symbol.
-    open my $fh, '<', "$stage_dir/$seqFile" or die "Cannot open $stage_dir/$seqFile: $!";
-    open(OUT, '>', "$work_dir/$seqFile") or die "Cannot open $work_dir/$seqFile: $!";
+    if (($input_type eq "groups") or ($input_type eq "auto")) {
+        # Align the sequences.
+        my @mafft_cmd = ("mafft", "--auto", "--preservecase", $ofile);
+        my $string_cmd = join(" ", @mafft_cmd);
+        print STDOUT "Running mafft.\n";
+        print STDOUT "$string_cmd\n";
+        $seqFile = "$work_dir/output.afa";
+        my $ok = run(\@mafft_cmd, "1>", $seqFile, "2>", "$work_dir/$prefix.mafft.log");
+        if (!$ok) {
+            die "Mafft command failed.\n";
+        }
+        print STDOUT "Finished mafft.\n";
+    }
+    # Replace leading and trailing gaps with the '#' symbol in the sequence file.
+    open my $fh, '<', "$seqFile" or die "Cannot open $seqFile: $!";
+    my $adjusted_seqFile = "$work_dir/adjusted_seqs.fasta";
+    open(OUT, '>', "$adjusted_seqFile") or die "Cannot open $adjusted_seqFile: $!";
     my $seq_string = "";
     my $header = "";
     while ( my $line = <$fh> ) {
@@ -102,8 +164,7 @@ sub process_metacats
             $header = $line;
             if ($seq_string) {
                 $seq_string = replace_gaps($seq_string);
-                print OUT "$seq_string\n"
-
+                print OUT "$seq_string\n";
             }
             $seq_string = "";
         } else {
@@ -115,14 +176,15 @@ sub process_metacats
     }
     if ($seq_string) {
         $seq_string = replace_gaps($seq_string);
-        print OUT "$seq_string\n"
+        print OUT "$seq_string\n";
     }
+    close OUT;
     # Run the analysis.
-    my @cmd = ("metadata_parser", "$work_dir/$seqFile", "$stage_dir/$metaDataFile", $alignment_type, "$p_value", "$work_dir/");
+    my @cmd = ("metadata_parser", "$adjusted_seqFile", "$metaDataFile", $alphabet, "$p_value", "$work_dir/");
     run_cmd(\@cmd);
-
     my @output_suffixes = (
         [qr/Table\.tsv$/, "tsv"],
+        [qr/\.log$/, "txt"],
         );
     opendir(D, $work_dir) or die "Cannot opendir $work_dir: $!";
     my @files = sort { $a cmp $b } grep { -f "$work_dir/$_" } readdir(D);
