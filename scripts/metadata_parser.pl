@@ -169,7 +169,7 @@ foreach my $file1 (@fileNames){#metadata category
 		copy_to_tsv($outputDir, "$base-chisqTable", $pvalue);
 		use_group_string_chisq($outputDir, "$base-chisqTable", $group_count, $num_hash);
     	copy_to_tsv($outputDir, "$base-mcTable", $pvalue);
-		use_group_string_mcTable($outputDir, "$base-mcTable", $group_count, $num_hash);
+		use_group_string_mcTable($outputDir, "$base-mcTable", $num_hash);
 		unlink("$outputDir$base-chisqTable.txt") or warn "Unable to unlink $!";
 		unlink("$outputDir$base-mcTable.txt") or warn "Unable to unlink $!";
 		# $R->set('inFilename', $file1);
@@ -190,22 +190,43 @@ sub use_group_string_chisq {
     open(IN, '>', $path) or die "Cannot open $path: $!";
 	# Convert groups column numbers to group strings. Change the column header from residue diversity to column headers for group strings.
 	print IN "Position\tChi-square_value\tP-value\tSignificant\tDegrees_of_freedom\tFewer_5";
-
+	for (my $i = 1; $i <= $group_count; $i ++) {
+		print IN "\t" . %$num_hash_ref{$i};
+	}
+	print IN "\n";
+	while (my $line = <$fh>) {
+		chomp $line;
+		my @columns = split(/\t/, $line);
+		my %line_group;
+		for (my $i = 1; $i <= $group_count; $i ++) {
+			$line_group{$i} = "";
+		}
+		my $groups_str = pop(@columns);
+		if (substr($groups_str, 0, 2) eq "gr") {
+			$groups_str =~ s/\|/\t/g;
+			my @groups = split("\t", $groups_str);
+			for my $g_string (@groups) {
+				$g_string =~ /group([0-9]+)\((.*)\)/;
+				$line_group{$1} = $2;
+			}
+		}
+		for (my $i = 1; $i <= $group_count; $i ++) {
+			push(@columns, $line_group{$i});
+		}
+		print IN join("\t", @columns) . "\n";
+	}
 	unlink($temp_path) or warn "Unable to unlink $!";
 }
 
 sub use_group_string_mcTable {
-	my ($work_dir, $basename, $group_count, $num_hash_ref) = @_;
+	my ($work_dir, $basename, $num_hash_ref) = @_;
 	my $temp_path = "$work_dir$basename.temp.tsv";
 	my $path = "$work_dir$basename.tsv";
 	open my $fh, '<', $temp_path or die "Cannot open $temp_path: $!";
     open(IN, '>', $path) or die "Cannot open $path: $!";
 	print IN "Position\tMultiple_comparison_p-value\tSignificant\tGroups\n";
 	my $sel = 2;
-	foreach my $key (sort(keys %$num_hash_ref)) {
-    	# print STDOUT $key, '=', %$num_hash_ref{$key}, "\n";
-		print STDOUT $key;
-	}
+	# Convert group numbers to group strings.
 	while ( my $line = <$fh> ) {
         chomp $line;
         my @columns = split(/\t/, $line);
@@ -215,12 +236,14 @@ sub use_group_string_mcTable {
 		for my $num (@groups) {
 			$text = $text . %$num_hash_ref{$num} . ',';
 		}
+		while (substr($text, 0, 1) eq ",") {
+			$text = substr($text, 1);
+		}
 		if (length($text) > 1) {
 			$text = substr($text, 0, -1);
 		}
 		print IN join("\t", @columns[0..$sel])."\t".$text."\n";
 	}
-	# Convert groups column numbers to group strings.
 	unlink($temp_path) or warn "Unable to unlink $!";
 }
 
