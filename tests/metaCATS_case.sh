@@ -4,3 +4,4 @@ if [ $2 -gt 0 ]
 then
     rm -r ./work ./stage
 fi
+echo $1

@@ -32,6 +32,22 @@
             "type": "float"
         },
         {
+            "id": "year_ranges",
+            "allow_multiple": false,
+            "label": "The year ranges field.",
+            "required": 0,
+            "desc": "",
+            "type": "string"
+        },
+        {
+            "id": "metadata_group",
+            "allow_multiple": false,
+            "label": "The metadata type.",
+            "required": 0,
+            "desc": "The metadata type. Used for reference.",
+            "type": "string"
+        },
+        {
             "id": "input_type",
             "allow_multiple": false,
             "label": "The input type.",
@@ -118,6 +134,20 @@
                     "required": 1,
                     "label": "Group string",
                     "desc": "A string to describe the group to associate the id into.",
+                    "type": "string"
+                },
+                {
+                    "id": "g_id",
+                    "required": 0,
+                    "label": "Genome id",
+                    "desc": "Genome id string.",
+                    "type": "string"
+                },
+                {
+                    "id": "metadata",
+                    "required": 0,
+                    "label": "Metadata",
+                    "desc": "Original metadata category.",
                     "type": "string"
                 }
             ]
