@@ -1,0 +1,47 @@
+{
+    "p_value": 0.05,
+    "output_path": "/jsporter@patricbrc.org/home/MetaCATS",
+    "output_file": "formfill2",
+    "year_ranges": "1998,1999-2005,2006",
+    "alphabet": "aa",
+    "input_type": "auto",
+    "metadata_group": "collection_year",
+    "auto_groups": [
+        {
+	            "id": "fig|332415.4.peg.252",
+	            "metadata": "",
+	            "grp": "<=1998",
+	            "g_id": "332415.4"
+	        },
+        {
+	            "id": "fig|1249656.3.peg.981",
+	            "metadata": "1997",
+	            "grp": "<=1998",
+	            "g_id": "1249656.3"
+	        },
+        {
+	            "id": "fig|1249650.3.peg.965",
+	            "metadata": "2000",
+	            "grp": ">=2006",
+	            "g_id": "1249650.3"
+	        },
+        {
+	            "id": "fig|1242993.11.peg.1039",
+	            "metadata": "2016",
+	            "grp": ">=2006",
+	            "g_id": "1242993.11"
+	        },
+        {
+	            "id": "fig|1242993.3.peg.695",
+	            "metadata": "",
+	            "grp": "1999-2005",
+	            "g_id": "1242993.3"
+	        },
+        {
+	            "id": "fig|1423892.3.peg.4",
+	            "metadata": "1983",
+	            "grp": "1999-2005",
+	            "g_id": "1423892.3"
+	        }
+    ]
+}
