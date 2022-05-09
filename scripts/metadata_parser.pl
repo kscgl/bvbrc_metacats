@@ -189,7 +189,7 @@ sub use_group_string_chisq {
 	open my $fh, '<', $temp_path or die "Cannot open $temp_path: $!";
     open(IN, '>', $path) or die "Cannot open $path: $!";
 	# Convert groups column numbers to group strings. Change the column header from residue diversity to column headers for group strings.
-	print IN "Position\tChi-square_value\tP-value\tSignificant\tDegrees_of_freedom\tFewer_5";
+	print IN "Position\tChi-square_value\tP-value\tDegrees_of_freedom\tFewer_5";
 	for (my $i = 1; $i <= $group_count; $i ++) {
 		print IN "\t" . %$num_hash_ref{$i};
 	}
@@ -224,8 +224,8 @@ sub use_group_string_mcTable {
 	my $path = "$work_dir$basename.tsv";
 	open my $fh, '<', $temp_path or die "Cannot open $temp_path: $!";
     open(IN, '>', $path) or die "Cannot open $path: $!";
-	print IN "Position\tMultiple_comparison_p-value\tSignificant\tGroups\n";
-	my $sel = 2;
+	print IN "Position\tMultiple_comparison_p-value\tGroups\n";
+	my $sel = 1;
 	# Convert group numbers to group strings.
 	while ( my $line = <$fh> ) {
         chomp $line;
@@ -281,14 +281,12 @@ sub copy_to_tsv {
         }
         # Add a column if the position is statistically significant or not.
         my $obs_p_value = $columns[$sel];
-        my $sig = "N";
         if ($obs_p_value ne "NA" and $obs_p_value < $pvalue) {
-            $sig = "Y";
+			my $final = join($stuff, map { defined($_) ? $_ : '' } @columns[$sel+1..scalar(@columns)]);
+        	$final =~ s/[,|\t]$//;
+			# Join the columns together and print the results in a TSV file.
+        	print IN join("\t", @columns[0..$sel])."\t".$final."\n";
         }
-        # Join the columns together and print the results in a TSV file.
-        my $final = join($stuff, map { defined($_) ? $_ : '' } @columns[$sel+1..scalar(@columns)]);
-        $final =~ s/[,|\t]$//;
-        print IN join("\t", @columns[0..$sel])."\t$sig\t".$final."\n";
     }
     close(IN);
     close($fh);
