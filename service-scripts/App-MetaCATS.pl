@@ -73,10 +73,6 @@ sub process_metacats
     # Get values based on input type.
     if ($input_type eq "files") {
         # Get sequence file and metadata file in the staging directory.
-        $seqFile = basename($params_to_app->{alignment_file});
-        $seqFile = "$stage_dir/$seqFile";
-        $metaDataFile = basename($params_to_app->{group_file});
-        $metaDataFile = "$stage_dir/$metaDataFile";
         my @to_stage;
         push(@to_stage, $params_to_app->{alignment_file});
         push(@to_stage, $params_to_app->{group_file});
@@ -84,11 +80,9 @@ sub process_metacats
         {
             warn Dumper(\@to_stage);
             $staged = $app->stage_in(\@to_stage, $stage_dir, 1);
-            # while (my($orig, $staged_file) = each %$staged)
-            # {
-            #     my $path_ref = $in_files{$orig};
-            #     $$path_ref = $staged_file;
-            # }
+            my %new_hash = %{ $staged };
+            $seqFile = $new_hash{$params_to_app->{alignment_file}};
+            $metaDataFile = $new_hash{$params_to_app->{group_file}};
         }
     } elsif ($input_type eq "groups") {
         # Get the sequences and create a metadata file for the groups.
