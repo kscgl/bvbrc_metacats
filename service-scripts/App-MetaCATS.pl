@@ -179,6 +179,7 @@ sub process_metacats
     my @output_suffixes = (
         [qr/Table\.tsv$/, "tsv"],
         [qr/\.log$/, "txt"],
+        [qr/\.afa$/, "aligned_protein_fasta"],
         );
     opendir(D, $work_dir) or die "Cannot opendir $work_dir: $!";
     my @files = sort { $a cmp $b } grep { -f "$work_dir/$_" } readdir(D);
