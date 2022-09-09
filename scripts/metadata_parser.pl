@@ -34,7 +34,8 @@ open (METADATA, "<$metaDataFile") || die "$metaDataFile: $!\n";  #check to see i
 print "Loading Metadata...\n";
 
 while (my $line = <METADATA>) {     #read all lines of the file
-	chop $line;
+	$line =~ s/\r\n/\n/g;
+	chomp $line;
 	if($lineNum ==1){ # read metadata lines and automatically populate 2D-hash`
 		@data=split /\t/,$line;
 		for (my $i = 1; $i < $numCategories; $i++){
@@ -56,6 +57,7 @@ my $tempName;
 print "Loading Sequence Data...\n";
 
 while (my $line1 = <SEQS>) {		#read all lines of the file
+	$line1 =~ s/\r\n/\n/g;
 	chomp $line1;
 	if ($line1 =~m/^>(\S+)/){
 		$tempName = $1;
