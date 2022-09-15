@@ -15,7 +15,7 @@ use File::Basename;
 use IPC::Run qw(run);
 # use Statistics::R;
 
-my ($seqFile, $metaDataFile, $seqType, $pvalue, $outputDir) = @ARGV;
+my ($seqFile, $metaDataFile, $seqType, $pvalue, $check_header, $outputDir) = @ARGV;
 
 # my $metaDataFile = 'metadata.tsv';
 # my $seqFile = 'input.afa'; #aligned sequences
@@ -28,6 +28,34 @@ my $numCategories = 0;
 my @headers;
 my @data;
 my @fileNames;
+
+# Get the first line of the metadata file to detect if it is a header line.
+if ($check_header) {
+	open (METADATA, "<$metaDataFile") || die "$metaDataFile: $!\n";
+	my $line = <METADATA>;
+	$line =~ s/\r\n/\n/g;
+	chomp $line;
+	@data=split /\t/,$line;
+	close (METADATA);
+
+	# Search the seqs file to see if the metadata file has a header line.
+	open (SEQS, "<$seqFile") || die "$seqFile: $!\n"; 	#check to see if file exists
+		while(my $String = <SEQS>)
+		{
+			if(rindex($String, ">", 0) == 0 && $String =~ /$data[0]/)
+			{
+				@headers = ("0");
+				my $line_len = scalar(@data);
+				for (my $i = 1; $i < $line_len; $i++) {
+					push(@headers, "Category_" . $i);
+				}
+				$lineNum = 1;
+				$numCategories = @headers;
+				last;
+			}
+		}
+	close(SEQS);
+}
 
 #load metadata into hash
 open (METADATA, "<$metaDataFile") || die "$metaDataFile: $!\n";  #check to see if file exists
@@ -193,7 +221,12 @@ sub use_group_string_chisq {
 	# Convert groups column numbers to group strings. Change the column header from residue diversity to column headers for group strings.
 	print IN "Position\tChi-square_value\tP-value\tDegrees_of_freedom\tFewer_5";
 	for (my $i = 1; $i <= $group_count; $i ++) {
-		print IN "\t" . %$num_hash_ref{$i};
+		my $header_str = %$num_hash_ref{$i};
+		if ($header_str eq "") {
+			$header_str = "Unlabeled";
+		}
+        print IN "\t" . $header_str;
+		# print IN "\t" . %$num_hash_ref{$i};
 	}
 	print IN "\n";
 	while (my $line = <$fh>) {
@@ -236,7 +269,11 @@ sub use_group_string_mcTable {
 		my @groups = split(',', $groups_str);
 		my $text = "";
 		for my $num (@groups) {
-			$text = $text . %$num_hash_ref{$num} . ',';
+			my $group_str = %$num_hash_ref{$num};
+			if ($group_str eq "") {
+				$group_str = "Unlabeled";
+			}
+			$text = $text . $group_str . ',';
 		}
 		while (substr($text, 0, 1) eq ",") {
 			$text = substr($text, 1);

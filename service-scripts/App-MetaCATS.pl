@@ -65,6 +65,7 @@ sub process_metacats
     my $p_value = $params_to_app->{p_value};
     my $alphabet = $params_to_app->{alphabet};
     my $input_type = $params_to_app->{input_type};
+    my $check_header = 0;
     my $seqFile = "";
     my $metaDataFile = "";
     my $staged = {};
@@ -74,6 +75,7 @@ sub process_metacats
     if ($input_type eq "files") {
         # Get sequence file and metadata file in the staging directory.
         my @to_stage;
+        $check_header = 1;
         push(@to_stage, $params_to_app->{alignment_file});
         push(@to_stage, $params_to_app->{group_file});
         if (@to_stage)
@@ -174,7 +176,7 @@ sub process_metacats
     }
     close OUT;
     # Run the analysis.
-    my @cmd = ("metadata_parser", "$adjusted_seqFile", "$metaDataFile", $alphabet, "$p_value", "$work_dir/");
+    my @cmd = ("metadata_parser", $adjusted_seqFile, $metaDataFile, $alphabet, $p_value, $check_header,  "$work_dir/");
     run_cmd(\@cmd);
     my @output_suffixes = (
         [qr/Table\.tsv$/, "tsv"],
