@@ -30,7 +30,7 @@ my @data;
 my @fileNames;
 
 # Get the first line of the metadata file to detect if it is a header line.
-if ($check_header eq "1") {
+if ($check_header) {
 	open (METADATA, "<$metaDataFile") || die "$metaDataFile: $!\n";
 	my $line = <METADATA>;
 	$line =~ s/\r\n/\n/g;
