@@ -193,7 +193,12 @@ sub use_group_string_chisq {
 	# Convert groups column numbers to group strings. Change the column header from residue diversity to column headers for group strings.
 	print IN "Position\tChi-square_value\tP-value\tDegrees_of_freedom\tFewer_5";
 	for (my $i = 1; $i <= $group_count; $i ++) {
-		print IN "\t" . %$num_hash_ref{$i};
+		my $header_str = %$num_hash_ref{$i};
+		if ($header_str eq "") {
+			$header_str = "Unlabeled";
+		}
+        print IN "\t" . $header_str;
+		# print IN "\t" . %$num_hash_ref{$i};
 	}
 	print IN "\n";
 	while (my $line = <$fh>) {
@@ -236,7 +241,11 @@ sub use_group_string_mcTable {
 		my @groups = split(',', $groups_str);
 		my $text = "";
 		for my $num (@groups) {
-			$text = $text . %$num_hash_ref{$num} . ',';
+			my $group_str = %$num_hash_ref{$num};
+			if ($group_str eq "") {
+				$group_str = "Unlabeled";
+			}
+			$text = $text . $group_str . ',';
 		}
 		while (substr($text, 0, 1) eq ",") {
 			$text = substr($text, 1);
