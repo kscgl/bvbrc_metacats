@@ -29,6 +29,32 @@ my @headers;
 my @data;
 my @fileNames;
 
+# Get the first line of the metadata file to detect if it is a header line.
+open (METADATA, "<$metaDataFile") || die "$metaDataFile: $!\n";
+my $line = <METADATA>;
+$line =~ s/\r\n/\n/g;
+chomp $line;
+@data=split /\t/,$line;
+close (METADATA);
+
+# Search the seqs file to see if the metadata file has a header line.
+open (SEQS, "<$seqFile") || die "$seqFile: $!\n"; 	#check to see if file exists
+    while(my $String = <SEQS>)
+    {
+        if($String =~ /$data[0]/)
+        {
+			@headers = ("0");
+			my $line_len = scalar(@data);
+			for (my $i = 1; $i < $line_len; $i++) {
+				push(@headers, "Category_" . $i);
+			}
+			$lineNum = 1;
+			$numCategories = @headers;
+			last;
+        }
+    }
+close(SEQS);
+
 #load metadata into hash
 open (METADATA, "<$metaDataFile") || die "$metaDataFile: $!\n";  #check to see if file exists
 print "Loading Metadata...\n";
