@@ -18,6 +18,7 @@ This module provides the following application specfication(s):
 
 ## See also
 
+* [Metadata-driven Comparative Analysis Tool (meta-CATS) Quick Reference](https://www.bv-brc.org/docs/quick_references/services/metacats.html)
 * [Metadata-driven Comparative Analysis Tool (https://www.bv-brc.org/docs/meta-CATS.html)](https://bv-brc.org/app/MetaCATS)
 * [Metadata-driven Comparative Analysis Tool (https://www.bv-brc.org/docs/meta-CATS.html) Tutorial](/tutorial/metacats/metacats)
 
