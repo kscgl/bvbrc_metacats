@@ -222,8 +222,11 @@ sub use_group_string_chisq {
 	print IN "Position\tChi-square_value\tP-value\tDegrees_of_freedom\tFewer_5";
 	for (my $i = 1; $i <= $group_count; $i ++) {
 		my $header_str = %$num_hash_ref{$i};
-		if ($header_str eq "") {
+		if (!$header_str) {
 			$header_str = "Unlabeled";
+		} else {
+			# Extract substring after the last "/"
+			$header_str =~ s{.*/}{};
 		}
         print IN "\t" . $header_str;
 		# print IN "\t" . %$num_hash_ref{$i};
@@ -270,8 +273,11 @@ sub use_group_string_mcTable {
 		my $text = "";
 		for my $num (@groups) {
 			my $group_str = %$num_hash_ref{$num};
-			if ($group_str eq "") {
+			if (!$group_str) {
 				$group_str = "Unlabeled";
+			} else {
+				 # Extract substring after the last "/"
+				 $group_str =~ s{.*/}{};
 			}
 			$text = $text . $group_str . ',';
 		}
